@@ -4,12 +4,12 @@ services:
     env: python
     plan: free
     buildCommand: "./deploy.sh"
-    startCommand: "gunicorn api.wsgi:app"
+    startCommand: "gunicorn back.wsgi:app"
     numInstances: 1
     region: ohio
     envVars:
       - key: FLASK_APP
-        value: api/app
+        value: back/app
       - key: FLASK_ENV
         value: production
       - key: FLASK_RUN_PORT

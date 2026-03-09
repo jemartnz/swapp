@@ -1,0 +1,14 @@
+flask
+sqlalchemy
+flask-cors
+flask-sqlalchemy
+flask-admin
+flask-migrate
+psycopg2
+python-dotenv
+wtforms
+flask-jwt-extended
+authlib
+requests
+gunicorn
+cloudinary

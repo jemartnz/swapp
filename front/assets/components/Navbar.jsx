@@ -6,24 +6,24 @@ import { useStore } from "../../hooks/useStore";
 
 function Navbar() {
   const { store, dispatch } = useStore();
-  const [usuario, setUsuario] = useState(null);
-  const [categorias, setCategorias] = useState([]);
+  const [user, setUser] = useState(null);
+  const [categories, setCategories] = useState([]);
   const navigate = useNavigate();
   const isLogged = !!(
-    usuario ||
+    user ||
     localStorage.getItem("token") ||
     localStorage.getItem("user")
   );
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  const CATEGORIAS_DESTACADAS = [
+  const FEATURED_CATEGORIES = [
     "Educación y Tutorías",
     "Tecnología y Programación",
     "Música y Audio",
     "Negocios y Finanzas",
     "Entretenimiento y Cultura",
   ];
-  const iconosCategorias = {
+  const categoryIcons = {
     "Educación y Tutorías": "fa-solid fa-graduation-cap",
     "Tecnología y Programación": "fa-solid fa-square-binary",
     "Música y Audio": "fa-solid fa-play",
@@ -42,38 +42,38 @@ function Navbar() {
 
   useEffect(() => {
     const fromStore =
-      store?.usuario && Object.keys(store.usuario).length > 0
-        ? store.usuario
+      store?.user && Object.keys(store.user).length > 0
+        ? store.user
         : null;
 
     const fromLocal = JSON.parse(localStorage.getItem("user") || "null");
 
     if (fromStore) {
-      setUsuario(fromStore);
+      setUser(fromStore);
     } else if (fromLocal) {
-      setUsuario({
-        nombre: fromLocal.nombre,
-        apellido: fromLocal.apellido,
-        correo_electronico: fromLocal.email,
-        foto_perfil: fromLocal.picture,
+      setUser({
+        first_name: fromLocal.first_name,
+        last_name: fromLocal.last_name,
+        email: fromLocal.email,
+        profile_picture: fromLocal.picture,
       });
     } else {
-      setUsuario(null);
+      setUser(null);
     }
 
-    const fetchCategorias = async () => {
+    const fetchCategories = async () => {
       try {
-        const response = await fetch(`${env.api}/api/categorias`);
+        const response = await fetch(`${env.api}/api/categories`);
         if (!response.ok) throw new Error("Error al obtener categorías");
         const data = await response.json();
-        setCategorias(data);
-        dispatch({ type: "SET_CATEGORIAS", payload: data });
+        setCategories(data);
+        dispatch({ type: "SET_CATEGORIES", payload: data });
       } catch (error) {
         console.error("Error cargando categorías:", error);
       }
     };
-    fetchCategorias();
-  }, [store.usuario, dispatch]);
+    fetchCategories();
+  }, [store.user, dispatch]);
 
   const handleLogout = async () => {
     setShowLogoutModal(true);
@@ -81,18 +81,18 @@ function Navbar() {
 
   const confirmLogout = async () => {
     try {
-      const usuarioGoogle = localStorage.getItem("user");
+      const googleUser = localStorage.getItem("user");
 
-      if (usuarioGoogle) {
+      if (googleUser) {
         await fetch(`${env.api}/api/logout`, { method: "POST" });
         localStorage.removeItem("user");
       }
 
       localStorage.removeItem("token");
       localStorage.removeItem("user");
-      dispatch({ type: "SET_USUARIO", payload: {} });
+      dispatch({ type: "SET_USER", payload: {} });
       dispatch({ type: "SET_TOKEN", payload: "" });
-      setUsuario(null);
+      setUser(null);
 
       navigate("/login");
     } catch (error) {
@@ -117,31 +117,6 @@ function Navbar() {
             />
           </Link>
 
-          {/* <div className="d-flex flex-grow-1 align-items-center mx-3 position-relative">
-            <form className="d-flex flex-grow-1 me-2 ms-0" role="search">
-              <div className="input-group w-100">
-                <input
-                  className="form-control"
-                  type="search"
-                  placeholder="Buscar"
-                  aria-label="Search"
-                />
-                <button className="btn btn-main2" type="submit">
-                  <i className="fa-solid fa-magnifying-glass"></i>
-                </button>
-              </div>
-            </form>
-            <button
-              className="btn btn-outline-secondary d-lg-none"
-              type="button"
-              data-bs-toggle="offcanvas"
-              data-bs-target="#categoriasSidebar"
-              aria-controls="categoriasSidebar"
-            >
-              <i className="fa-solid fa-bars"></i>
-            </button>
-          </div> */}
-
           {/* Solo móvil */}
           <div className="d-flex flex-column align-items-center d-lg-none w-100">
             <div className="w-100 d-flex justify-content-between">
@@ -156,7 +131,7 @@ function Navbar() {
               </button>
 
               <div className="d-flex">
-                {usuario ? (
+                {user ? (
                   <>
                     <Link to="/perfil" className="btn btn-main2 me-2">
                       Perfil
@@ -259,7 +234,7 @@ function Navbar() {
       </nav>
       <hr></hr>
 
-      {/* ***************** SEGUNDA NAVBAR ********************** */}
+      {/* ***************** SECOND NAVBAR ********************** */}
       <nav className="navbar navbar-expand-lg navbar-light bg-light p-0">
         <div className="container-fluid">
           <button
@@ -273,24 +248,24 @@ function Navbar() {
           </button>
 
           <ul className="navbar-nav me-auto mb-2 mb-lg-0 ms-2">
-            {CATEGORIAS_DESTACADAS.map((nombre) => {
-              const categoria = categorias?.find(
-                (cat) => cat.nombre_categoria === nombre
+            {FEATURED_CATEGORIES.map((name) => {
+              const cat = categories?.find(
+                (c) => c.name === name
               );
 
               return (
-                <li key={nombre} className="nav-item me-3">
-                  {categoria ? (
+                <li key={name} className="nav-item me-3">
+                  {cat ? (
                     <NavLink
-                      to={`/usuarios/categoria/${categoria.id_categoria}`}
+                      to={`/usuarios/categoria/${cat.id}`}
                       className={({ isActive }) =>
                         `nav-link ${isActive ? "active-link" : ""}`
                       }
                     >
-                      {nombre}
+                      {name}
                     </NavLink>
                   ) : (
-                    <span className="text-muted">{nombre}</span>
+                    <span className="text-muted">{name}</span>
                   )}
                 </li>
               );
@@ -318,10 +293,10 @@ function Navbar() {
         </div>
         <div className="offcanvas-body">
           <ul className="list-unstyled">
-            {categorias.map((cat) => (
-              <li key={cat.id_categoria}>
+            {categories.map((cat) => (
+              <li key={cat.id}>
                 <NavLink
-                  to={`/usuarios/categoria/${cat.id_categoria}`}
+                  to={`/usuarios/categoria/${cat.id}`}
                   className={({ isActive }) =>
                     `nav-link ${isActive ? "active-link" : ""}`
                   }
@@ -335,11 +310,11 @@ function Navbar() {
                 >
                   <i
                     className={`${
-                      iconosCategorias[cat.nombre_categoria] ||
+                      categoryIcons[cat.name] ||
                       "fa-solid fa-circle"
                     } me-3`}
                   ></i>
-                  {cat.nombre_categoria}
+                  {cat.name}
                 </NavLink>
               </li>
             ))}

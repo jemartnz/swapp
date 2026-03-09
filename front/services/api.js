@@ -1,8 +1,8 @@
 import { env } from "../environ";
 
-export const registrarUsuario = async (formData) => {
+export const registerUser = async (formData) => {
   try {
-    const response = await fetch(`${env.api}/api/usuarios`, {
+    const response = await fetch(`${env.api}/api/users`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
