@@ -1,28 +1,28 @@
 #!/usr/bin/env bash
 set -e
 
-echo "🚀 Iniciando build de Render..."
+echo "🚀 Starting Render build..."
 
 # --- Backend ---
-echo "📦 Instalando dependencias de Python..."
+echo "📦 Installing Python dependencies..."
 pip install --upgrade pip
 pip install pipenv
 pipenv install --system --deploy
 
 # --- Frontend ---
-echo "🧩 Compilando frontend con Vite..."
+echo "🧩 Building frontend with Vite..."
 cd front
 npm install
 npm run build
 cd ..
 
-# --- Migraciones ---
-echo "🗄️ Aplicando migraciones de base de datos..."
+# --- Migrations ---
+echo "🗄️ Applying database migrations..."
 pipenv run flask db upgrade
 
-# --- Datos Iniciales ---
-echo "📚 Cargando datos iniciales..."
-pipenv run python -m api.init.usuarios_init
-pipenv run python -m api.init.ins_hab_categ
+# --- Seed Data ---
+echo "📚 Loading seed data..."
+pipenv run python -m back.init.seed_data
+pipenv run python -m back.init.seed_users
 
-echo "✅ Despliegue completado exitosamente."
+echo "✅ Deployment completed successfully."

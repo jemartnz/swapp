@@ -1,0 +1,11 @@
+node_modules
+front/dist
+__pycache__
+*.pyc
+.git
+*.env
+!.env.example
+*.db
+.devcontainer
+.claude
+.agents

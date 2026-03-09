@@ -6,15 +6,15 @@ import { useStore } from "../hooks/useStore";
 
 const Login = () => {
   const { _, dispatch } = useStore();
-  const [correo, setCorreo] = useState("");
-  const [contrasena, setContrasena] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!correo || !contrasena) {
+    if (!email || !password) {
       setError("Por favor completa todos los campos.");
       return;
     }
@@ -22,15 +22,15 @@ const Login = () => {
     setError("");
 
     try {
-      const response = await fetch(`${env.api}/api/autorizar`, {
+      const response = await fetch(`${env.api}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
         body: JSON.stringify({
-          correo_electronico: correo,
-          contrasena: contrasena,
+          email: email,
+          password: password,
         }),
       });
 
@@ -83,8 +83,8 @@ const Login = () => {
                   type="email"
                   className="form-control login-input-swapp"
                   placeholder="Ingresa tu correo"
-                  value={correo}
-                  onChange={(e) => setCorreo(e.target.value)}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
 
@@ -95,8 +95,8 @@ const Login = () => {
                   type="password"
                   className="form-control login-input-swapp"
                   placeholder="Ingresa tu contraseña"
-                  value={contrasena}
-                  onChange={(e) => setContrasena(e.target.value)}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
 

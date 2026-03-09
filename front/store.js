@@ -1,37 +1,37 @@
 export const initialStore = () => ({
-	usuario: {},
-	usuarios: [],
+	user: {},
+	users: [],
 	token: "",
-	categorias: []
+	categories: []
 });
 
 export function storeReducer(store, action = {}) {
 	switch (action.type) {
-		case "SET_USUARIO":
+		case "SET_USER":
 			return {...store,
-				usuario: typeof action.payload === "object" 
-					? action.payload 
-					: store.usuario
+				user: typeof action.payload === "object"
+					? action.payload
+					: store.user
 				};
-		case "SET_USUARIOS":
+		case "SET_USERS":
 			return {
-				...store, 
-				usuarios: Array.isArray(action.payload) 
-					? action.payload 
-					: store.usuarios
+				...store,
+				users: Array.isArray(action.payload)
+					? action.payload
+					: store.users
 			};
 		case "SET_TOKEN":
 			return {...store,
-				token: typeof action.payload === "string" 
-					? action.payload 
+				token: typeof action.payload === "string"
+					? action.payload
 					: store.token
 				};
-		case "SET_CATEGORIAS":
+		case "SET_CATEGORIES":
 			return {
-				...store, 
-				categorias: Array.isArray(action.payload) 
-					? action.payload 
-					: store.categorias
+				...store,
+				categories: Array.isArray(action.payload)
+					? action.payload
+					: store.categories
 			};
 		default:
 			throw new Error("Unknown action type: " + action.type);
