@@ -2,6 +2,7 @@
     Ratings
 """
 from flask import Blueprint, jsonify, request
+from flask_jwt_extended import jwt_required
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from back.models import db, User, Rating, Exchange
 
@@ -49,6 +50,7 @@ def get_rating(rating_id):
 
 
 @ratings.route('/api/ratings', methods=["POST"])
+@jwt_required()
 def create_rating():
     """
         Create a rating
@@ -104,6 +106,7 @@ def create_rating():
 
 
 @ratings.route('/api/ratings/<int:rating_id>', methods=['PUT'])
+@jwt_required()
 def update_rating(rating_id):
     """
         Update a rating
@@ -137,6 +140,7 @@ def update_rating(rating_id):
 
 @ratings.route(
         '/api/ratings/<int:rating_id>', methods=['DELETE'])
+@jwt_required()
 def delete_rating(rating_id):
     """
         Delete a rating

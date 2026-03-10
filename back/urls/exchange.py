@@ -2,6 +2,7 @@
     Exchanges
 """
 from flask import Blueprint, jsonify, request
+from flask_jwt_extended import jwt_required
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from back.models import db, Exchange, User, Skill
 
@@ -99,6 +100,7 @@ def get_demanded_exchanges(user_id):
 
 
 @exchanges.route("/api/exchanges", methods=["POST"])
+@jwt_required()
 def create_exchange():
     """
         Create a new exchange between users
@@ -140,6 +142,7 @@ def create_exchange():
 
 @exchanges.route(
         "/api/exchanges/<int:exchange_id>/complete", methods=["PUT"])
+@jwt_required()
 def complete_exchange(exchange_id):
     """
         Mark an exchange as completed
@@ -198,6 +201,7 @@ def get_exchanges_by_user(user_id):
 
 @exchanges.route(
         "/api/exchanges/join/<int:exchange_id>", methods=["PUT"])
+@jwt_required()
 def assign_demander(exchange_id):
     """
         Allow a user to assign themselves as demander of an exchange
@@ -246,6 +250,7 @@ def assign_demander(exchange_id):
 
 @exchanges.route(
         "/api/exchanges/<int:exchange_id>", methods=["DELETE"])
+@jwt_required()
 def delete_exchange(exchange_id):
     """
         Delete an exchange (only if not completed)
