@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required
 from back.models import db, User
 from back.cloudinary.config import cloudinary
 import cloudinary.uploader
@@ -9,6 +10,7 @@ cloudinary_routes = Blueprint("cloudinary_routes", __name__)
 
 @cloudinary_routes.route(
         "/api/users/<int:user_id>/profile-picture", methods=["POST"])
+@jwt_required()
 def upload_profile_picture(user_id):
     """
     Upload or update a user's profile picture on Cloudinary

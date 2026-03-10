@@ -3,6 +3,7 @@
 """
 from sqlalchemy.exc import IntegrityError
 from flask import Blueprint, jsonify, request
+from flask_jwt_extended import jwt_required
 from back.models import db, Category
 
 categories = Blueprint('categories', __name__)
@@ -36,6 +37,7 @@ def get_category(category_id):
 
 
 @categories.route('/api/categories', methods=['POST'])
+@jwt_required()
 def create_category():
     """
         Create a category
@@ -57,6 +59,7 @@ def create_category():
 
 
 @categories.route('/api/categories/<int:category_id>', methods=['PUT'])
+@jwt_required()
 def update_category(category_id):
     """
         Update a category
@@ -75,6 +78,7 @@ def update_category(category_id):
 
 
 @categories.route('/api/categories/<int:category_id>', methods=['DELETE'])
+@jwt_required()
 def delete_category(category_id):
     """
         Delete a category

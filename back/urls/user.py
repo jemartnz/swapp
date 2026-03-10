@@ -79,6 +79,7 @@ def get_users_by_category(category_id):
 
 
 @users.route('/api/users/<int:user_id>', methods=['DELETE'])
+@jwt_required()
 def delete_user(user_id):
     """
         Delete a user
@@ -151,6 +152,7 @@ def create_user():
 
 
 @users.route('/api/users/<int:user_id>', methods=['PUT'])
+@jwt_required()
 def update_user(user_id):
     """
         Update a user
@@ -189,6 +191,7 @@ def update_user(user_id):
 
 
 @users.route('/api/users/<int:user_id>/skill', methods=["POST"])
+@jwt_required()
 def update_user_skill(user_id):
     """
         Associate/Disassociate skills to/from users

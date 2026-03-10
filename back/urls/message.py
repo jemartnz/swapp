@@ -2,6 +2,7 @@
     Messages
 """
 from flask import Blueprint, jsonify, request
+from flask_jwt_extended import jwt_required
 from back.models import db, Message
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
@@ -70,6 +71,7 @@ def get_message(message_id):
 
 
 @messages.route('/api/messages', methods=["POST"])
+@jwt_required()
 def create_message():
     """
         Create a message
@@ -96,6 +98,7 @@ def create_message():
 
 
 @messages.route('/api/messages/<int:message_id>', methods=['PUT'])
+@jwt_required()
 def update_message(message_id):
     """
         Update a message
@@ -129,6 +132,7 @@ def update_message(message_id):
 
 
 @messages.route('/api/messages/<int:message_id>', methods=['DELETE'])
+@jwt_required()
 def delete_message(message_id):
     """
         Delete a message

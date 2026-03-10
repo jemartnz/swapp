@@ -3,6 +3,7 @@
 """
 from sqlalchemy.exc import IntegrityError
 from flask import Blueprint, jsonify, request
+from flask_jwt_extended import jwt_required
 from back.models import db, Skill
 
 skills = Blueprint('skills', __name__)
@@ -36,6 +37,7 @@ def get_skill(skill_id):
 
 
 @skills.route('/api/skills', methods=["POST"])
+@jwt_required()
 def create_skill():
     """
         Create a skill
@@ -62,6 +64,7 @@ def create_skill():
 
 
 @skills.route('/api/skills/<int:skill_id>', methods=['DELETE'])
+@jwt_required()
 def delete_skill(skill_id):
     """
         Delete a skill
@@ -73,6 +76,7 @@ def delete_skill(skill_id):
 
 
 @skills.route('/api/skills/<int:skill_id>', methods=['PUT'])
+@jwt_required()
 def update_skill(skill_id):
     """
         Update a skill
