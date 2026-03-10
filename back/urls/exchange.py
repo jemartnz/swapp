@@ -4,7 +4,7 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from back.utils import get_current_user, error_response
+from back.utils import get_current_user, error_response, validate, success
 from back.models import db, Exchange, User, Skill
 
 exchanges = Blueprint("exchanges", __name__)
@@ -18,10 +18,7 @@ def get_exchanges():
     try:
         all_exchanges = Exchange.query.all()
 
-        if not all_exchanges:
-            return jsonify({"message": "No exchanges registered"}), 404
-
-        return jsonify([e.to_dict() for e in all_exchanges]), 200
+        return success([e.to_dict() for e in all_exchanges])
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -39,7 +36,7 @@ def get_exchange(exchange_id):
         if not exchange:
             return jsonify({"error": "Exchange not found"}), 404
 
-        return jsonify(exchange.to_dict()), 200
+        return success(exchange.to_dict())
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -56,12 +53,7 @@ def get_offered_exchanges(user_id):
         user_exchanges = Exchange.query.filter_by(
             offerer_id=user_id).all()
 
-        if not user_exchanges:
-            return jsonify({
-                "message": "User has not created any exchanges"
-            }), 404
-
-        return jsonify([e.to_dict() for e in user_exchanges]), 200
+        return success([e.to_dict() for e in user_exchanges])
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -78,12 +70,7 @@ def get_demanded_exchanges(user_id):
         user_exchanges = Exchange.query.filter_by(
             demander_id=user_id).all()
 
-        if not user_exchanges:
-            return jsonify({
-                "message": "User has not participated as demander"
-            }), 404
-
-        return jsonify([e.to_dict() for e in user_exchanges]), 200
+        return success([e.to_dict() for e in user_exchanges])
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -102,12 +89,14 @@ def create_exchange():
     if not current or current.id != data.get("offerer_id"):
         return jsonify({"error": "Forbidden"}), 403
 
+    errors = validate(data, {
+        "offerer_id": ["required"],
+        "skill_id":   ["required"],
+    })
+    if errors:
+        return jsonify({"error": errors[0]}), 400
+
     try:
-        required = ["offerer_id", "skill_id"]
-        for field in required:
-            if field not in data:
-                return jsonify({
-                    "error": f"Missing required field: {field}"}), 400
 
         offerer = User.query.get_or_404(data["offerer_id"])
         skill = Skill.query.get_or_404(data["skill_id"])
@@ -120,10 +109,8 @@ def create_exchange():
         db.session.add(exchange)
         db.session.commit()
 
-        return jsonify({
-            "message": "Exchange created successfully",
-            "id": exchange.id
-        }), 201
+        return success({"id": exchange.id},
+                       message="Exchange created successfully", status=201)
 
     except IntegrityError:
         db.session.rollback()
@@ -160,8 +147,7 @@ def complete_exchange(exchange_id):
         exchange.completed_at = db.func.now()
 
         db.session.commit()
-        return jsonify({
-            "message": "Exchange completed successfully"}), 200
+        return success(message="Exchange completed successfully")
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -180,12 +166,7 @@ def get_exchanges_by_user(user_id):
             (Exchange.demander_id == user_id)
         ).all()
 
-        if not user_exchanges:
-            return jsonify({
-                "message": "User has no registered exchanges"
-            }), 404
-
-        return jsonify([e.to_dict() for e in user_exchanges]), 200
+        return success([e.to_dict() for e in user_exchanges])
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -232,10 +213,8 @@ def assign_demander(exchange_id):
         exchange.demander_id = demander.id
         db.session.commit()
 
-        return jsonify({
-            "message": "User assigned as demander successfully",
-            "exchange": exchange.to_dict()
-        }), 200
+        return success(exchange.to_dict(),
+                       message="User assigned as demander successfully")
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -266,7 +245,7 @@ def delete_exchange(exchange_id):
 
         db.session.delete(exchange)
         db.session.commit()
-        return jsonify({"message": "Exchange deleted successfully"}), 200
+        return success(message="Exchange deleted successfully")
 
     except SQLAlchemyError as e:
         db.session.rollback()

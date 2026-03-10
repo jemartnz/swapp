@@ -4,7 +4,7 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from back.models import db, Message
-from back.utils import get_current_user, error_response
+from back.utils import get_current_user, error_response, validate, success
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 messages = Blueprint('messages', __name__)
@@ -22,7 +22,7 @@ def get_sent_messages(user_id):
             .order_by(Message.sent_at.desc())
             .all()
         )
-        return jsonify([m.to_dict() for m in msgs]), 200
+        return success([m.to_dict() for m in msgs])
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -41,7 +41,7 @@ def get_received_messages(user_id):
             .order_by(Message.sent_at.desc())
             .all()
         )
-        return jsonify([m.to_dict() for m in msgs]), 200
+        return success([m.to_dict() for m in msgs])
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -55,7 +55,7 @@ def get_message(message_id):
     """
     try:
         msg = Message.query.get_or_404(message_id)
-        return jsonify(msg.to_dict())
+        return success(msg.to_dict())
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -73,6 +73,14 @@ def create_message():
     if not current or current.id != data.get("sender_id"):
         return jsonify({"error": "Forbidden"}), 403
 
+    errors = validate(data, {
+        "content":     ["required"],
+        "sender_id":   ["required"],
+        "receiver_id": ["required"],
+    })
+    if errors:
+        return jsonify({"error": errors[0]}), 400
+
     try:
         msg = Message(
             content=data['content'],
@@ -81,7 +89,7 @@ def create_message():
         )
         db.session.add(msg)
         db.session.commit()
-        return jsonify(msg.to_dict()), 201
+        return success(msg.to_dict(), status=201)
 
     except IntegrityError:
         db.session.rollback()
@@ -122,7 +130,7 @@ def update_message(message_id):
             setattr(msg, "seen", False)
 
         db.session.commit()
-        return jsonify(msg.to_dict()), 200
+        return success(msg.to_dict())
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -147,7 +155,7 @@ def delete_message(message_id):
 
         db.session.delete(msg)
         db.session.commit()
-        return jsonify({"message": "Message deleted"}), 200
+        return success(message="Message deleted")
 
     except SQLAlchemyError as e:
         db.session.rollback()

@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from back.models import db, Category
+from back.utils import error_response, validate, success
 
 categories = Blueprint('categories', __name__)
 
@@ -15,8 +16,6 @@ def get_categories():
         Get all categories
     """
     all_categories = Category.query.all()
-    if not all_categories:
-        return jsonify({"error": "No categories registered"}), 404
 
     result = []
     for c in all_categories:
@@ -24,7 +23,7 @@ def get_categories():
         cat["skills"] = [s.to_dict() for s in c.skills]
         result.append(cat)
 
-    return jsonify(result), 200
+    return success(result)
 
 
 @categories.route('/api/categories/<int:category_id>', methods=['GET'])
@@ -33,7 +32,7 @@ def get_category(category_id):
         Get a single category
     """
     category = Category.query.get_or_404(category_id)
-    return jsonify(category.to_dict())
+    return success(category.to_dict())
 
 
 @categories.route('/api/categories', methods=['POST'])
@@ -42,9 +41,12 @@ def create_category():
     """
         Create a category
     """
-    data = request.get_json()
-    if not data or not data.get("name"):
-        return jsonify({"error": "The 'name' field is required"}), 400
+    data = request.get_json() or {}
+
+    errors = validate(data, {"name": ["required"]})
+    if errors:
+        return jsonify({"error": errors[0]}), 400
+
     name = data.get("name")
     new_category = Category(name=name)
     db.session.add(new_category)
@@ -54,8 +56,7 @@ def create_category():
         db.session.rollback()
         return jsonify({"error": "Category already exists"}), 400
 
-    return jsonify({"message": "Category created successfully",
-                    "category": new_category.to_dict()}), 201
+    return success(new_category.to_dict(), message="Category created successfully", status=201)
 
 
 @categories.route('/api/categories/<int:category_id>', methods=['PUT'])
@@ -71,10 +72,7 @@ def update_category(category_id):
 
     db.session.commit()
 
-    return jsonify({
-        "id": category.id,
-        "name": category.name,
-    })
+    return success(category.to_dict())
 
 
 @categories.route('/api/categories/<int:category_id>', methods=['DELETE'])
@@ -86,6 +84,4 @@ def delete_category(category_id):
     category = Category.query.get_or_404(category_id)
     db.session.delete(category)
     db.session.commit()
-    return jsonify({
-        "message": "Category deleted"
-    })
+    return success(message="Category deleted")

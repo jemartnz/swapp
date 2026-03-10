@@ -9,7 +9,7 @@ from flask_jwt_extended import create_access_token, create_refresh_token
 from flask_jwt_extended import jwt_required
 from flask_jwt_extended import get_jwt_identity
 from back.models import db, User, Skill, Category, Rating
-from back.utils import get_current_user, error_response
+from back.utils import get_current_user, error_response, validate, success
 
 users = Blueprint('users', __name__)
 
@@ -22,9 +22,6 @@ def get_users():
     try:
         all_users = User.query.all()
 
-        if not all_users:
-            return jsonify({"message": "No users registered"}), 200
-
         avg_rows = (
             db.session.query(
                 Rating.rated_id,
@@ -35,9 +32,9 @@ def get_users():
         )
         avg_map = {row.rated_id: row.avg for row in avg_rows}
 
-        return jsonify([
+        return success([
             u.to_dict(rating_avg=avg_map.get(u.id, 0)) for u in all_users
-        ]), 200
+        ])
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -57,7 +54,7 @@ def get_user(user_id):
 
         usr = user.to_dict()
         usr["skills"] = [s.to_dict() for s in user.skills]
-        return jsonify(usr), 200
+        return success(usr)
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -74,7 +71,7 @@ def get_users_by_category(category_id):
     skill_ids = [s.id for s in category.skills]
 
     if not skill_ids:
-        return jsonify([]), 200
+        return success([])
 
     category_users = (
         User.query
@@ -95,9 +92,9 @@ def get_users_by_category(category_id):
     )
     avg_map = {row.rated_id: row.avg for row in avg_rows}
 
-    return jsonify([
+    return success([
         u.to_dict(rating_avg=avg_map.get(u.id, 0)) for u in category_users
-    ]), 200
+    ])
 
 
 @users.route('/api/users/<int:user_id>', methods=['DELETE'])
@@ -117,7 +114,7 @@ def delete_user(user_id):
     try:
         db.session.delete(user)
         db.session.commit()
-        return jsonify({"message": "User deleted"}), 200
+        return success(message="User deleted")
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -130,12 +127,19 @@ def create_user():
         Create a user
     """
     data = request.get_json() or {}
-    try:
-        if not data:
-            return jsonify({
-                "error": "Empty parameters"
-            }), 400
 
+    errors = validate(data, {
+        "first_name": ["required"],
+        "last_name":  ["required"],
+        "email":      ["required", "email"],
+        "password":   ["required", "min_password"],
+        "accepts_terms": ["required"],
+        "birth_date": ["date"],
+    })
+    if errors:
+        return jsonify({"error": errors[0]}), 400
+
+    try:
         usr = User(
             first_name=data['first_name'], last_name=data['last_name'],
             email=data['email'],
@@ -162,9 +166,7 @@ def create_user():
 
         db.session.add(usr)
         db.session.commit()
-        return jsonify(
-            {"message": "User created",
-                "id": usr.id}), 201
+        return success({"id": usr.id}, message="User created", status=201)
 
     except IntegrityError:
         db.session.rollback()
@@ -187,6 +189,14 @@ def update_user(user_id):
 
     data = request.get_json() or {}
 
+    errors = validate(data, {
+        "email":      ["email"],
+        "password":   ["min_password"],
+        "birth_date": ["date"],
+    })
+    if errors:
+        return jsonify({"error": errors[0]}), 400
+
     try:
         user = User.query.get_or_404(user_id)
 
@@ -205,8 +215,7 @@ def update_user(user_id):
                     setattr(user, f, data[f])
 
         db.session.commit()
-        return jsonify({"message": "User updated", "updated":
-                        user.to_dict()})
+        return success(user.to_dict(), message="User updated")
 
     except IntegrityError:
         db.session.rollback()
@@ -252,7 +261,7 @@ def update_user_skill(user_id):
         user["skills"] = [s.to_dict() for s in usr.skills]
 
         db.session.commit()
-        return jsonify(user), 201
+        return success(user, status=201)
 
     except IntegrityError:
         db.session.rollback()
@@ -271,6 +280,14 @@ def login():
         (login with email and password)
     """
     data = request.get_json() or {}
+
+    errors = validate(data, {
+        "email":    ["required"],
+        "password": ["required"],
+    })
+    if errors:
+        return jsonify({"error": errors[0]}), 400
+
     email = data.get("email")
     passw = data.get("password")
 
@@ -283,11 +300,11 @@ def login():
 
         token = create_access_token(identity=user.email)
         refresh_token = create_refresh_token(identity=user.email)
-        return jsonify({
+        return success({
             "token": token,
             "refresh_token": refresh_token,
             "email": user.email
-        }), 200
+        })
 
     except Exception as e:  # pylint: disable=broad-exception-caught
         return error_response("Authentication error", e)
@@ -307,15 +324,6 @@ def get_current_user():
     user = User.query.filter_by(email=email).first()
 
     if not user:
-        new_user = User(
-            first_name="",
-            last_name="",
-            email=email,
-            profile_picture="",
-            password="google_oauth_dummy"
-        )
-        db.session.add(new_user)
-        db.session.commit()
-        user = new_user
+        return jsonify({"error": "User not found"}), 404
 
-    return jsonify(user.to_dict()), 200
+    return success(user.to_dict())
