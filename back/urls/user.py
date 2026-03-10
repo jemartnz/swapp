@@ -9,7 +9,7 @@ from flask_jwt_extended import create_access_token, create_refresh_token
 from flask_jwt_extended import jwt_required
 from flask_jwt_extended import get_jwt_identity
 from back.models import db, User, Skill, Category, Rating
-from back.utils import get_current_user, error_response, validate
+from back.utils import get_current_user, error_response, validate, success
 
 users = Blueprint('users', __name__)
 
@@ -22,9 +22,6 @@ def get_users():
     try:
         all_users = User.query.all()
 
-        if not all_users:
-            return jsonify({"message": "No users registered"}), 200
-
         avg_rows = (
             db.session.query(
                 Rating.rated_id,
@@ -35,9 +32,9 @@ def get_users():
         )
         avg_map = {row.rated_id: row.avg for row in avg_rows}
 
-        return jsonify([
+        return success([
             u.to_dict(rating_avg=avg_map.get(u.id, 0)) for u in all_users
-        ]), 200
+        ])
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -57,7 +54,7 @@ def get_user(user_id):
 
         usr = user.to_dict()
         usr["skills"] = [s.to_dict() for s in user.skills]
-        return jsonify(usr), 200
+        return success(usr)
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -74,7 +71,7 @@ def get_users_by_category(category_id):
     skill_ids = [s.id for s in category.skills]
 
     if not skill_ids:
-        return jsonify([]), 200
+        return success([])
 
     category_users = (
         User.query
@@ -95,9 +92,9 @@ def get_users_by_category(category_id):
     )
     avg_map = {row.rated_id: row.avg for row in avg_rows}
 
-    return jsonify([
+    return success([
         u.to_dict(rating_avg=avg_map.get(u.id, 0)) for u in category_users
-    ]), 200
+    ])
 
 
 @users.route('/api/users/<int:user_id>', methods=['DELETE'])
@@ -117,7 +114,7 @@ def delete_user(user_id):
     try:
         db.session.delete(user)
         db.session.commit()
-        return jsonify({"message": "User deleted"}), 200
+        return success(message="User deleted")
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -169,9 +166,7 @@ def create_user():
 
         db.session.add(usr)
         db.session.commit()
-        return jsonify(
-            {"message": "User created",
-                "id": usr.id}), 201
+        return success({"id": usr.id}, message="User created", status=201)
 
     except IntegrityError:
         db.session.rollback()
@@ -220,8 +215,7 @@ def update_user(user_id):
                     setattr(user, f, data[f])
 
         db.session.commit()
-        return jsonify({"message": "User updated", "updated":
-                        user.to_dict()})
+        return success(user.to_dict(), message="User updated")
 
     except IntegrityError:
         db.session.rollback()
@@ -267,7 +261,7 @@ def update_user_skill(user_id):
         user["skills"] = [s.to_dict() for s in usr.skills]
 
         db.session.commit()
-        return jsonify(user), 201
+        return success(user, status=201)
 
     except IntegrityError:
         db.session.rollback()
@@ -306,11 +300,11 @@ def login():
 
         token = create_access_token(identity=user.email)
         refresh_token = create_refresh_token(identity=user.email)
-        return jsonify({
+        return success({
             "token": token,
             "refresh_token": refresh_token,
             "email": user.email
-        }), 200
+        })
 
     except Exception as e:  # pylint: disable=broad-exception-caught
         return error_response("Authentication error", e)
@@ -332,4 +326,4 @@ def get_current_user():
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    return jsonify(user.to_dict()), 200
+    return success(user.to_dict())

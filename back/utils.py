@@ -82,6 +82,21 @@ def validate(data, rules):
     return errors
 
 
+def success(data=None, message=None, status=200):
+    """Return a standardised success response: {"data": ..., "message": ...}"""
+    body = {}
+    if data is not None:
+        body["data"] = data
+    if message:
+        body["message"] = message
+    return jsonify(body), status
+
+
+def not_found(resource="Resource"):
+    """Return a standardised 404 response."""
+    return jsonify({"error": f"{resource} not found"}), 404
+
+
 def error_response(message, e, status=500):
     """Return a JSON error response. Includes exception detail only in DEBUG."""
     body = {"error": message}
