@@ -4,7 +4,7 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from back.utils import get_current_user, error_response
+from back.utils import get_current_user, error_response, validate
 from back.models import db, Exchange, User, Skill
 
 exchanges = Blueprint("exchanges", __name__)
@@ -102,12 +102,14 @@ def create_exchange():
     if not current or current.id != data.get("offerer_id"):
         return jsonify({"error": "Forbidden"}), 403
 
+    errors = validate(data, {
+        "offerer_id": ["required"],
+        "skill_id":   ["required"],
+    })
+    if errors:
+        return jsonify({"error": errors[0]}), 400
+
     try:
-        required = ["offerer_id", "skill_id"]
-        for field in required:
-            if field not in data:
-                return jsonify({
-                    "error": f"Missing required field: {field}"}), 400
 
         offerer = User.query.get_or_404(data["offerer_id"])
         skill = Skill.query.get_or_404(data["skill_id"])

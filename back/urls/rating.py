@@ -4,7 +4,7 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from back.utils import get_current_user, error_response
+from back.utils import get_current_user, error_response, validate
 from back.models import db, User, Rating, Exchange
 
 ratings = Blueprint('ratings', __name__)
@@ -57,15 +57,15 @@ def create_rating():
     if not current or current.id != data.get("rater_id"):
         return jsonify({"error": "Forbidden"}), 403
 
-    try:
-        required_fields = ["exchange_id", "rater_id", "score"]
-        missing = [f for f in required_fields if f not in data]
+    errors = validate(data, {
+        "exchange_id": ["required"],
+        "rater_id":    ["required"],
+        "score":       ["required", ("min", 1), ("max", 5)],
+    })
+    if errors:
+        return jsonify({"error": errors[0]}), 400
 
-        if missing:
-            return jsonify({
-                "error":
-                f"Missing required fields: {', '.join(missing)}"
-            }), 400
+    try:
 
         exchange = Exchange.query.get_or_404(data["exchange_id"])
         rater = User.query.get_or_404(data["rater_id"])
@@ -122,8 +122,12 @@ def update_rating(rating_id):
         current = get_current_user()
         if not current or current.id != rating.rater_id:
             return jsonify({"error": "Forbidden"}), 403
-        if not data:
-            return jsonify({"error": "Incomplete parameters"}), 400
+
+        errors = validate(data, {
+            "score": [("min", 1), ("max", 5)],
+        })
+        if errors:
+            return jsonify({"error": errors[0]}), 400
 
         fields = [
             "score", "comment"

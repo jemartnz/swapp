@@ -9,7 +9,7 @@ from flask_jwt_extended import create_access_token, create_refresh_token
 from flask_jwt_extended import jwt_required
 from flask_jwt_extended import get_jwt_identity
 from back.models import db, User, Skill, Category, Rating
-from back.utils import get_current_user, error_response
+from back.utils import get_current_user, error_response, validate
 
 users = Blueprint('users', __name__)
 
@@ -130,12 +130,19 @@ def create_user():
         Create a user
     """
     data = request.get_json() or {}
-    try:
-        if not data:
-            return jsonify({
-                "error": "Empty parameters"
-            }), 400
 
+    errors = validate(data, {
+        "first_name": ["required"],
+        "last_name":  ["required"],
+        "email":      ["required", "email"],
+        "password":   ["required", "min_password"],
+        "accepts_terms": ["required"],
+        "birth_date": ["date"],
+    })
+    if errors:
+        return jsonify({"error": errors[0]}), 400
+
+    try:
         usr = User(
             first_name=data['first_name'], last_name=data['last_name'],
             email=data['email'],
@@ -186,6 +193,14 @@ def update_user(user_id):
         return jsonify({"error": "Forbidden"}), 403
 
     data = request.get_json() or {}
+
+    errors = validate(data, {
+        "email":      ["email"],
+        "password":   ["min_password"],
+        "birth_date": ["date"],
+    })
+    if errors:
+        return jsonify({"error": errors[0]}), 400
 
     try:
         user = User.query.get_or_404(user_id)
@@ -271,6 +286,14 @@ def login():
         (login with email and password)
     """
     data = request.get_json() or {}
+
+    errors = validate(data, {
+        "email":    ["required"],
+        "password": ["required"],
+    })
+    if errors:
+        return jsonify({"error": errors[0]}), 400
+
     email = data.get("email")
     passw = data.get("password")
 

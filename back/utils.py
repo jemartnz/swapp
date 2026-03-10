@@ -1,6 +1,8 @@
 """
     Utils module
 """
+import re
+from datetime import datetime
 from flask import url_for, jsonify, current_app
 from flask_jwt_extended import get_jwt_identity
 
@@ -21,6 +23,63 @@ class APIException(Exception):
         rv = dict(self.payload or ())
         rv['message'] = self.message
         return rv
+
+
+def validate(data, rules):
+    """
+    Validate request data against a dict of rules.
+
+    rules: { field: [validator, ...] }
+    Validators:
+      "required"       — field must be present and non-empty
+      "email"          — must match basic email pattern
+      "min_password"   — string length >= 8
+      "date"           — must parse as YYYY-MM-DD
+      ("min", n)       — numeric value >= n
+      ("max", n)       — numeric value <= n
+
+    Returns a list of error strings (empty means valid).
+    """
+    errors = []
+    for field, validators in rules.items():
+        value = data.get(field)
+        for v in validators:
+            if v == "required":
+                if value is None or value == "":
+                    errors.append(f"'{field}' is required")
+            elif v == "email":
+                if value and not re.match(
+                        r"^[^@\s]+@[^@\s]+\.[^@\s]+$", str(value)):
+                    errors.append(
+                        f"'{field}' must be a valid email address")
+            elif v == "min_password":
+                if value and len(str(value)) < 8:
+                    errors.append(
+                        f"'{field}' must be at least 8 characters")
+            elif v == "date":
+                if value:
+                    try:
+                        datetime.strptime(str(value), "%Y-%m-%d")
+                    except ValueError:
+                        errors.append(
+                            f"'{field}' must be in YYYY-MM-DD format")
+            elif isinstance(v, tuple) and v[0] == "min":
+                if value is not None:
+                    try:
+                        if float(value) < v[1]:
+                            errors.append(
+                                f"'{field}' must be at least {v[1]}")
+                    except (TypeError, ValueError):
+                        errors.append(f"'{field}' must be a number")
+            elif isinstance(v, tuple) and v[0] == "max":
+                if value is not None:
+                    try:
+                        if float(value) > v[1]:
+                            errors.append(
+                                f"'{field}' must be at most {v[1]}")
+                    except (TypeError, ValueError):
+                        errors.append(f"'{field}' must be a number")
+    return errors
 
 
 def error_response(message, e, status=500):

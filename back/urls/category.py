@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from back.models import db, Category
+from back.utils import error_response, validate
 
 categories = Blueprint('categories', __name__)
 
@@ -42,9 +43,12 @@ def create_category():
     """
         Create a category
     """
-    data = request.get_json()
-    if not data or not data.get("name"):
-        return jsonify({"error": "The 'name' field is required"}), 400
+    data = request.get_json() or {}
+
+    errors = validate(data, {"name": ["required"]})
+    if errors:
+        return jsonify({"error": errors[0]}), 400
+
     name = data.get("name")
     new_category = Category(name=name)
     db.session.add(new_category)

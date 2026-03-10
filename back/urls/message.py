@@ -4,7 +4,7 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from back.models import db, Message
-from back.utils import get_current_user, error_response
+from back.utils import get_current_user, error_response, validate
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 messages = Blueprint('messages', __name__)
@@ -72,6 +72,14 @@ def create_message():
     current = get_current_user()
     if not current or current.id != data.get("sender_id"):
         return jsonify({"error": "Forbidden"}), 403
+
+    errors = validate(data, {
+        "content":     ["required"],
+        "sender_id":   ["required"],
+        "receiver_id": ["required"],
+    })
+    if errors:
+        return jsonify({"error": errors[0]}), 400
 
     try:
         msg = Message(
