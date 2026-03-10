@@ -82,7 +82,7 @@ class User(db.Model):
     def __repr__(self):
         return f"<User {self.first_name} {self.last_name}>"
 
-    def to_dict(self):
+    def to_dict(self, rating_avg=None):
         """
             Serialize the attributes of User
         """
@@ -99,7 +99,9 @@ class User(db.Model):
             "gender": self.gender,
             "description": self.description,
             "status": self.status,
-            "rating_average": self.rating_average,
+            "rating_average": (
+                rating_avg if rating_avg is not None else self.rating_average
+            ),
             "created_at": self.created_at.strftime("%Y-%m-%d %H:%M:%S")
         }
 
