@@ -25,7 +25,13 @@ function Home() {
           Accept: "application/json",
         },
       })
-        .then((res) => res.json())
+        .then((res) => {
+          if (!res.ok) {
+            localStorage.removeItem("token");
+            return null;
+          }
+          return res.json();
+        })
         .then((data) => {
           if (data) {
             setUser(data);

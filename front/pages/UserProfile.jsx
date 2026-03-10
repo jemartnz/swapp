@@ -96,6 +96,7 @@ function UserProfile() {
         });
 
         if (!response.ok) {
+          localStorage.removeItem("token");
           console.error("Error al obtener usuario:", response.status);
           return;
         }

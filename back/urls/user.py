@@ -307,15 +307,6 @@ def get_current_user():
     user = User.query.filter_by(email=email).first()
 
     if not user:
-        new_user = User(
-            first_name="",
-            last_name="",
-            email=email,
-            profile_picture="",
-            password="google_oauth_dummy"
-        )
-        db.session.add(new_user)
-        db.session.commit()
-        user = new_user
+        return jsonify({"error": "User not found"}), 404
 
     return jsonify(user.to_dict()), 200
