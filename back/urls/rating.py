@@ -4,6 +4,7 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from back.utils import get_current_user
 from back.models import db, User, Rating, Exchange
 
 ratings = Blueprint('ratings', __name__)
@@ -56,6 +57,10 @@ def create_rating():
         Create a rating
     """
     data = request.get_json() or {}
+    current = get_current_user()
+    if not current or current.id != data.get("rater_id"):
+        return jsonify({"error": "Forbidden"}), 403
+
     try:
         required_fields = ["exchange_id", "rater_id", "score"]
         missing = [f for f in required_fields if f not in data]
@@ -118,6 +123,10 @@ def update_rating(rating_id):
 
         if not rating:
             return jsonify({"error": "Rating not found"}), 404
+
+        current = get_current_user()
+        if not current or current.id != rating.rater_id:
+            return jsonify({"error": "Forbidden"}), 403
         if not data:
             return jsonify({"error": "Incomplete parameters"}), 400
 
@@ -150,6 +159,10 @@ def delete_rating(rating_id):
 
         if not rating:
             return jsonify({"error": "Rating not found"}), 404
+
+        current = get_current_user()
+        if not current or current.id != rating.rater_id:
+            return jsonify({"error": "Forbidden"}), 403
 
         db.session.delete(rating)
         db.session.commit()

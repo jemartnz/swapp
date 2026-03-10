@@ -8,6 +8,7 @@ from flask_jwt_extended import create_access_token, create_refresh_token
 from flask_jwt_extended import jwt_required
 from flask_jwt_extended import get_jwt_identity
 from back.models import db, User, Skill, Category
+from back.utils import get_current_user
 
 users = Blueprint('users', __name__)
 
@@ -84,6 +85,10 @@ def delete_user(user_id):
     """
         Delete a user
     """
+    current = get_current_user()
+    if not current or current.id != user_id:
+        return jsonify({"error": "Forbidden"}), 403
+
     user = User.query.get(user_id)
     if not user:
         return jsonify({"error": "User not found"}), 404
@@ -157,6 +162,10 @@ def update_user(user_id):
     """
         Update a user
     """
+    current = get_current_user()
+    if not current or current.id != user_id:
+        return jsonify({"error": "Forbidden"}), 403
+
     data = request.get_json() or {}
 
     try:
@@ -196,6 +205,10 @@ def update_user_skill(user_id):
     """
         Associate/Disassociate skills to/from users
     """
+    current = get_current_user()
+    if not current or current.id != user_id:
+        return jsonify({"error": "Forbidden"}), 403
+
     data = request.get_json() or {}
     try:
         usr = User.query.get(user_id)

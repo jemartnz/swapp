@@ -2,6 +2,7 @@
     Utils module
 """
 from flask import url_for
+from flask_jwt_extended import get_jwt_identity
 
 
 class APIException(Exception):
@@ -20,6 +21,13 @@ class APIException(Exception):
         rv = dict(self.payload or ())
         rv['message'] = self.message
         return rv
+
+
+def get_current_user():
+    """Return the User row matching the JWT identity (email)."""
+    from back.models import User  # local import to avoid circular dependency
+    email = get_jwt_identity()
+    return User.query.filter_by(email=email).first()
 
 
 def has_no_empty_params(rule):
