@@ -4,7 +4,7 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from back.utils import get_current_user
+from back.utils import get_current_user, error_response
 from back.models import db, User, Rating, Exchange
 
 ratings = Blueprint('ratings', __name__)
@@ -25,10 +25,7 @@ def get_ratings():
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({
-            "error": "Error retrieving ratings",
-            "detail": str(e)
-        }), 500
+        return error_response("Error retrieving ratings", e)
 
 
 @ratings.route('/api/ratings/<int:rating_id>', methods=['GET'])
@@ -46,8 +43,7 @@ def get_rating(rating_id):
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({"error": "Database error",
-                        "detail": str(e)}), 500
+        return error_response("Database error", e)
 
 
 @ratings.route('/api/ratings', methods=["POST"])
@@ -106,8 +102,7 @@ def create_rating():
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({"error": "Error creating rating",
-                        "detail": str(e)}), 500
+        return error_response("Error creating rating", e)
 
 
 @ratings.route('/api/ratings/<int:rating_id>', methods=['PUT'])
@@ -143,8 +138,7 @@ def update_rating(rating_id):
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({"error": "Database error",
-                        "detail": str(e)}), 500
+        return error_response("Database error", e)
 
 
 @ratings.route(
@@ -170,5 +164,4 @@ def delete_rating(rating_id):
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({"error": "Could not delete the rating",
-                        "detail": str(e)}), 500
+        return error_response("Could not delete the rating", e)

@@ -4,7 +4,7 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from back.models import db, Message
-from back.utils import get_current_user
+from back.utils import get_current_user, error_response
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 messages = Blueprint('messages', __name__)
@@ -26,10 +26,7 @@ def get_sent_messages(user_id):
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({
-            "error": "Database error",
-            "detail": str(e.__dict__.get("orig"))
-        }), 500
+        return error_response("Database error", e)
 
 
 @messages.route('/api/messages/<int:user_id>/received')
@@ -48,10 +45,7 @@ def get_received_messages(user_id):
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({
-            "error": "Database error",
-            "detail": str(e.__dict__.get("orig"))
-        }), 500
+        return error_response("Database error", e)
 
 
 @messages.route('/api/messages/<int:message_id>', methods=['GET'])
@@ -65,10 +59,7 @@ def get_message(message_id):
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({
-            "error": "Database error",
-            "detail": str(e.__dict__.get("orig"))
-        }), 500
+        return error_response("Database error", e)
 
 
 @messages.route('/api/messages', methods=["POST"])
@@ -98,8 +89,7 @@ def create_message():
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({"error": "Error creating message",
-                        "detail": str(e)}), 500
+        return error_response("Error creating message", e)
 
 
 @messages.route('/api/messages/<int:message_id>', methods=['PUT'])
@@ -136,8 +126,7 @@ def update_message(message_id):
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({"error": "Database error",
-                        "detail": str(e)}), 500
+        return error_response("Database error", e)
 
 
 @messages.route('/api/messages/<int:message_id>', methods=['DELETE'])
@@ -162,5 +151,4 @@ def delete_message(message_id):
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({"error": "Could not delete the message",
-                        "detail": str(e)}), 500
+        return error_response("Could not delete the message", e)

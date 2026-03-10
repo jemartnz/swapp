@@ -4,7 +4,7 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from back.utils import get_current_user
+from back.utils import get_current_user, error_response
 from back.models import db, Exchange, User, Skill
 
 exchanges = Blueprint("exchanges", __name__)
@@ -25,10 +25,7 @@ def get_exchanges():
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({
-            "error": "Error retrieving exchanges",
-            "detail": str(e)
-        }), 500
+        return error_response("Error retrieving exchanges", e)
 
 
 @exchanges.route("/api/exchanges/<int:exchange_id>", methods=["GET"])
@@ -46,8 +43,7 @@ def get_exchange(exchange_id):
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({
-            "error": "Database error", "detail": str(e)}), 500
+        return error_response("Database error", e)
 
 
 @exchanges.route(
@@ -69,10 +65,7 @@ def get_offered_exchanges(user_id):
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({
-            "error": "Error retrieving offered exchanges",
-            "detail": str(e)
-        }), 500
+        return error_response("Error retrieving offered exchanges", e)
 
 
 @exchanges.route(
@@ -94,10 +87,7 @@ def get_demanded_exchanges(user_id):
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({
-            "error": "Error retrieving demanded exchanges",
-            "detail": str(e)
-        }), 500
+        return error_response("Error retrieving demanded exchanges", e)
 
 
 @exchanges.route("/api/exchanges", methods=["POST"])
@@ -141,8 +131,7 @@ def create_exchange():
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({
-            "error": "Database error", "detail": str(e)}), 500
+        return error_response("Database error", e)
 
 
 @exchanges.route(
@@ -176,10 +165,7 @@ def complete_exchange(exchange_id):
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({
-            "error": "Error completing the exchange",
-            "detail": str(e)
-        }), 500
+        return error_response("Error completing the exchange", e)
 
 
 @exchanges.route(
@@ -203,10 +189,7 @@ def get_exchanges_by_user(user_id):
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({
-            "error": "Database error",
-            "detail": str(e)
-        }), 500
+        return error_response("Database error", e)
 
 
 @exchanges.route(
@@ -256,10 +239,7 @@ def assign_demander(exchange_id):
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({
-            "error": "Error assigning demander to exchange",
-            "detail": str(e)
-        }), 500
+        return error_response("Error assigning demander to exchange", e)
 
 
 @exchanges.route(
@@ -290,7 +270,4 @@ def delete_exchange(exchange_id):
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({
-            "error": "Error deleting the exchange",
-            "detail": str(e)
-        }), 500
+        return error_response("Error deleting the exchange", e)

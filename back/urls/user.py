@@ -3,12 +3,13 @@
 """
 from datetime import datetime
 from flask import Blueprint, jsonify, request
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from flask_jwt_extended import create_access_token, create_refresh_token
 from flask_jwt_extended import jwt_required
 from flask_jwt_extended import get_jwt_identity
-from back.models import db, User, Skill, Category
-from back.utils import get_current_user
+from back.models import db, User, Skill, Category, Rating
+from back.utils import get_current_user, error_response
 
 users = Blueprint('users', __name__)
 
@@ -24,14 +25,23 @@ def get_users():
         if not all_users:
             return jsonify({"message": "No users registered"}), 200
 
-        return jsonify([u.to_dict() for u in all_users]), 200
+        avg_rows = (
+            db.session.query(
+                Rating.rated_id,
+                func.avg(Rating.score).label("avg")
+            )
+            .group_by(Rating.rated_id)
+            .all()
+        )
+        avg_map = {row.rated_id: row.avg for row in avg_rows}
+
+        return jsonify([
+            u.to_dict(rating_avg=avg_map.get(u.id, 0)) for u in all_users
+        ]), 200
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({
-            "error": "Database error",
-            "detail": str(e.__dict__.get("orig"))
-        }), 500
+        return error_response("Database error", e)
 
 
 @users.route('/api/users/<int:user_id>', methods=['GET'])
@@ -51,10 +61,7 @@ def get_user(user_id):
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({
-            "error": "Database error",
-            "detail": str(e.__dict__.get("orig"))
-        }), 500
+        return error_response("Database error", e)
 
 
 @users.route("/api/users/category/<int:category_id>", methods=["GET"])
@@ -76,7 +83,21 @@ def get_users_by_category(category_id):
         .all()
     )
 
-    return jsonify([u.to_dict() for u in category_users]), 200
+    user_ids = [u.id for u in category_users]
+    avg_rows = (
+        db.session.query(
+            Rating.rated_id,
+            func.avg(Rating.score).label("avg")
+        )
+        .filter(Rating.rated_id.in_(user_ids))
+        .group_by(Rating.rated_id)
+        .all()
+    )
+    avg_map = {row.rated_id: row.avg for row in avg_rows}
+
+    return jsonify([
+        u.to_dict(rating_avg=avg_map.get(u.id, 0)) for u in category_users
+    ]), 200
 
 
 @users.route('/api/users/<int:user_id>', methods=['DELETE'])
@@ -100,8 +121,7 @@ def delete_user(user_id):
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({"error": "Could not delete user",
-                        "detail": str(e)}), 500
+        return error_response("Could not delete user", e)
 
 
 @users.route('/api/users', methods=["POST"])
@@ -152,8 +172,7 @@ def create_user():
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({"error": "Error creating user",
-                        "detail": str(e)}), 500
+        return error_response("Error creating user", e)
 
 
 @users.route('/api/users/<int:user_id>', methods=['PUT'])
@@ -195,8 +214,7 @@ def update_user(user_id):
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({"error": "Database error",
-                        "detail": str(e)}), 500
+        return error_response("Database error", e)
 
 
 @users.route('/api/users/<int:user_id>/skill', methods=["POST"])
@@ -242,8 +260,7 @@ def update_user_skill(user_id):
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({"error": "Error updating user skills",
-                        "detail": str(e)}), 500
+        return error_response("Error updating user skills", e)
 
 
 @users.route("/api/auth/login", methods=["POST"])
@@ -273,8 +290,7 @@ def login():
         }), 200
 
     except Exception as e:  # pylint: disable=broad-exception-caught
-        return jsonify(
-            {"error": "Authentication error", "detail": str(e)}), 500
+        return error_response("Authentication error", e)
 
 
 @users.route("/api/auth/me", methods=["GET"])
