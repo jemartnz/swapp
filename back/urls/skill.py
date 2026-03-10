@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from back.models import db, Skill
-from back.utils import error_response, validate
+from back.utils import error_response, validate, success
 
 skills = Blueprint('skills', __name__)
 
@@ -16,7 +16,7 @@ def get_skills():
         Get all skills
     """
     all_skills = Skill.query.all()
-    return jsonify([s.to_dict() for s in all_skills]), 200
+    return success([s.to_dict() for s in all_skills])
 
 
 @skills.route(
@@ -25,7 +25,7 @@ def get_skills_by_category(category_id):
     """Filter skills by category"""
     category_skills = Skill.query.filter_by(
         category_id=category_id).all()
-    return jsonify([s.to_dict() for s in category_skills]), 200
+    return success([s.to_dict() for s in category_skills])
 
 
 @skills.route('/api/skills/<int:skill_id>', methods=['GET'])
@@ -34,7 +34,7 @@ def get_skill(skill_id):
         Get a single skill
     """
     skill = Skill.query.get_or_404(skill_id)
-    return jsonify(skill.to_dict()), 200
+    return success(skill.to_dict())
 
 
 @skills.route('/api/skills', methods=["POST"])
@@ -64,9 +64,7 @@ def create_skill():
     except IntegrityError:
         db.session.rollback()
         return jsonify({"error": "Skill already exists"}), 400
-    return jsonify({
-            "id": new_skill.id
-        }), 201
+    return success({"id": new_skill.id}, message="Skill created successfully", status=201)
 
 
 @skills.route('/api/skills/<int:skill_id>', methods=['DELETE'])
@@ -78,7 +76,7 @@ def delete_skill(skill_id):
     skill = Skill.query.get_or_404(skill_id)
     db.session.delete(skill)
     db.session.commit()
-    return jsonify({"message": "Skill deleted"}), 200
+    return success(message="Skill deleted")
 
 
 @skills.route('/api/skills/<int:skill_id>', methods=['PUT'])
@@ -94,8 +92,4 @@ def update_skill(skill_id):
     skill.category_id = data.get('category_id', skill.category_id)
 
     db.session.commit()
-    return jsonify({
-        "id": skill.id,
-        "description": skill.description,
-        "category_id": skill.category_id
-    }), 200
+    return success(skill.to_dict())

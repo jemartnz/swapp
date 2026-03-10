@@ -4,7 +4,7 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from back.utils import get_current_user, error_response, validate
+from back.utils import get_current_user, error_response, validate, success
 from back.models import db, User, Rating, Exchange
 
 ratings = Blueprint('ratings', __name__)
@@ -18,10 +18,7 @@ def get_ratings():
     try:
         all_ratings = Rating.query.all()
 
-        if not all_ratings:
-            return jsonify({"message": "No ratings registered"}), 404
-
-        return jsonify([r.to_dict() for r in all_ratings]), 200
+        return success([r.to_dict() for r in all_ratings])
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -39,7 +36,7 @@ def get_rating(rating_id):
         if not rating:
             return jsonify({"error": "Rating not found"}), 404
 
-        return jsonify(rating.to_dict())
+        return success(rating.to_dict())
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -94,7 +91,7 @@ def create_rating():
 
         db.session.add(rating)
         db.session.commit()
-        return jsonify({"id": rating.id}), 201
+        return success({"id": rating.id}, message="Rating created successfully", status=201)
 
     except IntegrityError:
         db.session.rollback()
@@ -138,7 +135,7 @@ def update_rating(rating_id):
                 setattr(rating, f, data[f])
 
         db.session.commit()
-        return jsonify(rating.to_dict()), 200
+        return success(rating.to_dict())
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -164,7 +161,7 @@ def delete_rating(rating_id):
 
         db.session.delete(rating)
         db.session.commit()
-        return jsonify({"message": "Rating deleted"}), 200
+        return success(message="Rating deleted")
 
     except SQLAlchemyError as e:
         db.session.rollback()
