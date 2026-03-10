@@ -8,7 +8,7 @@ from flask_jwt_extended import create_access_token, create_refresh_token
 from flask_jwt_extended import jwt_required
 from flask_jwt_extended import get_jwt_identity
 from back.models import db, User, Skill, Category
-from back.utils import get_current_user
+from back.utils import get_current_user, error_response
 
 users = Blueprint('users', __name__)
 
@@ -28,10 +28,7 @@ def get_users():
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({
-            "error": "Database error",
-            "detail": str(e.__dict__.get("orig"))
-        }), 500
+        return error_response("Database error", e)
 
 
 @users.route('/api/users/<int:user_id>', methods=['GET'])
@@ -51,10 +48,7 @@ def get_user(user_id):
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({
-            "error": "Database error",
-            "detail": str(e.__dict__.get("orig"))
-        }), 500
+        return error_response("Database error", e)
 
 
 @users.route("/api/users/category/<int:category_id>", methods=["GET"])
@@ -100,8 +94,7 @@ def delete_user(user_id):
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({"error": "Could not delete user",
-                        "detail": str(e)}), 500
+        return error_response("Could not delete user", e)
 
 
 @users.route('/api/users', methods=["POST"])
@@ -152,8 +145,7 @@ def create_user():
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({"error": "Error creating user",
-                        "detail": str(e)}), 500
+        return error_response("Error creating user", e)
 
 
 @users.route('/api/users/<int:user_id>', methods=['PUT'])
@@ -195,8 +187,7 @@ def update_user(user_id):
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({"error": "Database error",
-                        "detail": str(e)}), 500
+        return error_response("Database error", e)
 
 
 @users.route('/api/users/<int:user_id>/skill', methods=["POST"])
@@ -242,8 +233,7 @@ def update_user_skill(user_id):
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({"error": "Error updating user skills",
-                        "detail": str(e)}), 500
+        return error_response("Error updating user skills", e)
 
 
 @users.route("/api/auth/login", methods=["POST"])
@@ -273,8 +263,7 @@ def login():
         }), 200
 
     except Exception as e:  # pylint: disable=broad-exception-caught
-        return jsonify(
-            {"error": "Authentication error", "detail": str(e)}), 500
+        return error_response("Authentication error", e)
 
 
 @users.route("/api/auth/me", methods=["GET"])

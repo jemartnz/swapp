@@ -57,6 +57,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = DB_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=6)
 app.config["SECRET_KEY"] = os.getenv("FLASK_APP_KEY")
+app.config["DEBUG"] = os.getenv("FLASK_DEBUG", "0") == "1"
 
 
 MIGRATIONS_DIR = os.path.join(BASE_DIR, "migrations")

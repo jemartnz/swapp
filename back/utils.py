@@ -1,7 +1,7 @@
 """
     Utils module
 """
-from flask import url_for
+from flask import url_for, jsonify, current_app
 from flask_jwt_extended import get_jwt_identity
 
 
@@ -21,6 +21,14 @@ class APIException(Exception):
         rv = dict(self.payload or ())
         rv['message'] = self.message
         return rv
+
+
+def error_response(message, e, status=500):
+    """Return a JSON error response. Includes exception detail only in DEBUG."""
+    body = {"error": message}
+    if current_app.config.get("DEBUG"):
+        body["detail"] = str(e)
+    return jsonify(body), status
 
 
 def get_current_user():

@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
 from back.models import db, User
-from back.utils import get_current_user
+from back.utils import get_current_user, error_response
 from back.cloudinary.config import cloudinary
 import cloudinary.uploader
 from werkzeug.utils import secure_filename
@@ -49,7 +49,4 @@ def upload_profile_picture(user_id):
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({
-            "error": "Error uploading image",
-            "detail": str(e)
-        }), 500
+        return error_response("Error uploading image", e)
