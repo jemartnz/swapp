@@ -1,143 +1,123 @@
-![Logo](/public/logo-swapp.webp) <br>
+![Logo](/front/public/logo-swapp.webp)
+
 # Swapp - Plataforma de Trueques
 
-**Swapp**: Es un sitio web donde las personas puedan intercambiar objetos o servicios sin dinero (por ejemplo, clases de inglés por clases de cocina), los servicios y objetos pueden ser de cualquier rubro, ya sea educativo, doméstico, ...
+**Swapp** es un sitio web donde las personas pueden intercambiar servicios sin dinero (por ejemplo, clases de inglés por clases de cocina). Los servicios pueden ser de cualquier rubro: educativo, doméstico, tecnológico, artístico, etc.
 
+## Tecnologías
 
-## 🌐 Tecnologías usadas
-- **React**: para frontend
-- **Flask**: framework web de Python y ORM de SQLAlchemy
-- **Consumo de Api externa**: cloudinary para fotos de los perfiles de las personas 
+- **Frontend**: React 19, React Router 7, Vite 7, Bootstrap 5
+- **Backend**: Flask, SQLAlchemy, Flask-JWT-Extended
+- **Base de datos**: PostgreSQL 16
+- **Media**: Cloudinary (fotos de perfil)
+- **Despliegue**: Docker Compose (dev & prod), Render, GitHub Container Registry
 
+## Requisitos
 
-## 📦 Estructura de directorios del proyecto
-En todo el desarrollo usamos docker containers, usando esta estructura de directorios
+- [Docker](https://docs.docker.com/get-docker/) y Docker Compose
+
+## Inicio rápido
+
+```bash
+# 1. Clonar el repositorio
+git clone https://github.com/jemartnz/swapp.git
+cd swapp
+
+# 2. Crear archivos de entorno
+cp back/.env.example back/.env
+cp front/.env.example front/.env
+cp db.env.example db.env
+
+# 3. Levantar los servicios
+docker compose up --build
+
+# 4. Ejecutar migraciones y seed (en otra terminal)
+docker compose exec backend flask db upgrade
+docker compose exec backend python -m back.init.seed_data
+docker compose exec backend python -m back.init.seed_users
+```
+
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:5000/api
+- **PostgreSQL**: localhost:5432
+
+Los cambios en `back/` y `front/` se reflejan automáticamente (hot-reload).
+
+## Producción
+
+```bash
+# Levantar con Docker
+docker compose -f compose.prod.yml up --build
+
+# Construir imágenes para el registry
+docker build -f docker/prod/backend.Dockerfile -t ghcr.io/jemartnz/swapp-backend .
+docker build -f docker/prod/frontend.Dockerfile -t ghcr.io/jemartnz/swapp-frontend .
+```
+
+En producción: Nginx sirve el frontend estático (puerto 80) y hace proxy de `/api/` al backend (Gunicorn, puerto 5000).
+
+## Estructura del proyecto
 
 ```
 .
-├── .devcontainer
-│   ├── Dockerfile
-│   ├── cfg.sh
-│   └── devcontainer.json
-├── .gitattributes
-├── .gitignore
-├── Pipfile
-├── README.md
-├── api
-│   ├── __init__.py
-│   ├── admin.py
-│   ├── admin_views.py
-│   ├── app.py
-│   ├── cloudinary
-│   │   ├── __init__.py
-│   │   ├── config.py
-│   │   └── routes.py
-│   ├── init
-│   │   ├── __init__.py
-│   │   ├── ins_hab_categ.py
-│   │   └── usuarios_init.py
-│   ├── models.py
-│   ├── urls
-│   │   ├── __init__.py
-│   │   ├── categorias.py
-│   │   ├── habilidades.py
-│   │   ├── intercambio.py
-│   │   ├── mensaje.py
-│   │   ├── puntuacion.py
-│   │   └── usuario.py
-│   ├── utils.py
-│   └── wsgi.py
-├── deploy.sh
-├── environment.txt
-├── eslint.config.js
-├── front
-│   ├── App.jsx
-│   ├── assets
-│   │   ├── components
-│   │   │   ├── BotonMensajeria.jsx
-│   │   │   ├── CardUsuario.jsx
-│   │   │   ├── Carousel.jsx
-│   │   │   ├── CropperModal.jsx
-│   │   │   ├── Footer.jsx
-│   │   │   ├── ModalAgregarHabilidad.jsx
-│   │   │   ├── ModalIntercambio.jsx
-│   │   │   ├── ModalMensajeria.jsx
-│   │   │   ├── ModalPuntuacion.jsx
-│   │   │   └── Navbar.jsx
-│   │   └── styles
-│   │       ├── App.css
-│   │       ├── BotonMensajeria.css
-│   │       ├── CardUsuario.css
-│   │       ├── Carousel.css
-│   │       ├── CropperModal.css
-│   │       ├── Footer.css
-│   │       ├── Login.css
-│   │       ├── ModalAgregarHabilidad.css
-│   │       ├── ModalIntercambio.css
-│   │       ├── ModalMensajeria.css
-│   │       ├── ModalPuntuacion.css
-│   │       ├── Navbar.css
-│   │       ├── PerfilPublico.css
-│   │       ├── PerfilUsuario.css
-│   │       └── Registro.css
-│   ├── environ.js
-│   ├── hooks
-│   │   └── useStore.jsx
-│   ├── index.css
-│   ├── main.jsx
-│   ├── pages
-│   │   ├── Home.jsx
-│   │   ├── Login.jsx
-│   │   ├── PerfilPublico.jsx
-│   │   ├── PerfilUsuario.jsx
-│   │   ├── Registro.jsx
-│   │   └── UsuariosCategoria.jsx
-│   ├── services
-│   │   └── api.js
-│   └── store.js
-├── index.html
-├── migrate.sh
-├── migrations
-│   ├── README
-│   ├── alembic.ini
-│   ├── env.py
-│   ├── script.py.mako
-│   └── versions
-│       └── d457297ca9c4_.py
-├── package.json
-├── public
-│   ├── Hombre1.png
-│   ├── Hombre2.png
-│   ├── Hombre3.png
-│   ├── Hombre4.png
-│   ├── Hombre5.png
-│   ├── Mujer1.png
-│   ├── Mujer2.png
-│   ├── Mujer3.png
-│   ├── Mujer4.png
-│   ├── Mujer5.png
-│   ├── logo-swapp.webp
-│   ├── slide1.png
-│   ├── slide2.jpg
-│   ├── slide3.png
-│   ├── swapp sin fondo.webp
-│   └── swapp-profile.png
-├── render.yaml
-├── rest
-│   ├── categorias.http
-│   ├── habilidades.http
-│   ├── intercambios.http
-│   ├── mensajes.http
-│   ├── puntuaciones.http
-│   └── usuarios.http
-├── scripts
-│   └── generate_diagram.py
-└── vite.config.js
-
+├── back/                       # Backend (Flask)
+│   ├── app.py                  # Entry point, blueprints, config
+│   ├── models.py               # SQLAlchemy models
+│   ├── wsgi.py                 # Gunicorn entry point
+│   ├── utils.py                # APIException helper
+│   ├── requirements.txt        # Python dependencies
+│   ├── urls/                   # Route blueprints
+│   │   ├── user.py
+│   │   ├── skill.py
+│   │   ├── category.py
+│   │   ├── message.py
+│   │   ├── exchange.py
+│   │   └── rating.py
+│   ├── cloudinary/             # Image upload config & routes
+│   ├── init/                   # Seed data scripts
+│   │   ├── seed_data.py
+│   │   └── seed_users.py
+│   ├── migrations/             # Alembic migrations
+│   ├── rest/                   # REST Client .http test files
+│   └── scripts/                # DB diagram generator
+├── front/                      # Frontend (React + Vite)
+│   ├── index.html              # HTML entry point
+│   ├── main.jsx                # React entry point
+│   ├── App.jsx                 # Router config
+│   ├── vite.config.js          # Vite config
+│   ├── package.json            # Node dependencies
+│   ├── eslint.config.js        # ESLint config
+│   ├── store.js                # Context + useReducer state
+│   ├── services/api.js         # API calls
+│   ├── pages/                  # Page components
+│   ├── assets/components/      # Reusable components
+│   ├── assets/styles/          # CSS modules
+│   └── public/                 # Static assets (images, icons)
+├── docker/
+│   ├── dev/                    # Development Dockerfiles
+│   │   ├── backend.Dockerfile
+│   │   └── frontend.Dockerfile
+│   └── prod/                   # Production Dockerfiles
+│       ├── backend.Dockerfile  # Multi-stage: Python → Gunicorn
+│       ├── frontend.Dockerfile # Multi-stage: Node build → Nginx
+│       └── nginx.conf          # Nginx SPA + API proxy config
+├── compose.yml                 # Docker Compose (desarrollo)
+├── compose.prod.yml            # Docker Compose (producción)
+├── db.env.example              # PostgreSQL credentials template
+├── deploy.sh                   # Render deployment script
+├── render.yaml                 # Render service config
+└── Pipfile                     # Python dependencies (pipenv)
 ```
 
+## API Endpoints
 
-## 🚀 Sitio web
-El sitio web está desplegado en la plataforma `https://render.com/`, y el enlace
-de este proyecto es el siguiente:
-[Swapp App](https://swapp-app.onrender.com)
+| Recurso    | URL base          | Métodos                        |
+|------------|-------------------|--------------------------------|
+| Usuarios   | `/api/users`      | GET, POST, PUT, DELETE         |
+| Auth       | `/api/auth`       | POST `/login`, GET `/me`       |
+| Habilidades| `/api/skills`     | GET, POST, PUT, DELETE         |
+| Categorías | `/api/categories` | GET, POST, PUT, DELETE         |
+| Mensajes   | `/api/messages`   | GET, POST, PUT, DELETE         |
+| Intercambios| `/api/exchanges` | GET, POST, PUT, DELETE         |
+| Puntuaciones| `/api/ratings`   | GET, POST, PUT, DELETE         |
+| Foto perfil| `/api/users/<id>/profile-picture` | POST          |
