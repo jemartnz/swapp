@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
 from back.models import db, User
+from back.utils import get_current_user
 from back.cloudinary.config import cloudinary
 import cloudinary.uploader
 from werkzeug.utils import secure_filename
@@ -15,6 +16,10 @@ def upload_profile_picture(user_id):
     """
     Upload or update a user's profile picture on Cloudinary
     """
+    current = get_current_user()
+    if not current or current.id != user_id:
+        return jsonify({"error": "Forbidden"}), 403
+
     try:
         user = User.query.get(user_id)
         if not user:

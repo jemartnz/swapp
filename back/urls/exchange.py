@@ -4,6 +4,7 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from back.utils import get_current_user
 from back.models import db, Exchange, User, Skill
 
 exchanges = Blueprint("exchanges", __name__)
@@ -107,6 +108,10 @@ def create_exchange():
     """
     data = request.get_json() or {}
 
+    current = get_current_user()
+    if not current or current.id != data.get("offerer_id"):
+        return jsonify({"error": "Forbidden"}), 403
+
     try:
         required = ["offerer_id", "skill_id"]
         for field in required:
@@ -152,6 +157,11 @@ def complete_exchange(exchange_id):
 
         if not exchange:
             return jsonify({"error": "Exchange not found"}), 404
+
+        current = get_current_user()
+        if not current or current.id not in (
+                exchange.offerer_id, exchange.demander_id):
+            return jsonify({"error": "Forbidden"}), 403
 
         if exchange.is_completed:
             return jsonify({
@@ -208,6 +218,10 @@ def assign_demander(exchange_id):
     """
     data = request.get_json() or {}
 
+    current = get_current_user()
+    if not current or current.id != data.get("user_id"):
+        return jsonify({"error": "Forbidden"}), 403
+
     try:
         demander_id = data.get("user_id")
         if not demander_id:
@@ -260,6 +274,10 @@ def delete_exchange(exchange_id):
 
         if not exchange:
             return jsonify({"error": "Exchange not found"}), 404
+
+        current = get_current_user()
+        if not current or current.id != exchange.offerer_id:
+            return jsonify({"error": "Forbidden"}), 403
 
         if exchange.is_completed:
             return jsonify({
