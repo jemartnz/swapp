@@ -38,10 +38,13 @@ const Login = () => {
         throw new Error("Error al conectar con el servidor");
       }
       const data = await response.json();
+      const token = data?.data?.token;
+      const refreshToken = data?.data?.refresh_token;
 
-      if (data) {
-        localStorage.setItem("token", JSON.stringify(data?.token));
-        dispatch({ type: "SET_TOKEN", payload: data?.token });
+      if (token) {
+        localStorage.setItem("token", JSON.stringify(token));
+        if (refreshToken) localStorage.setItem("refresh_token", refreshToken);
+        dispatch({ type: "SET_TOKEN", payload: token });
         navigate("/perfil");
       } else {
         setError("Correo o contraseña incorrectos.");

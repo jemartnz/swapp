@@ -327,3 +327,14 @@ def get_current_user():
         return jsonify({"error": "User not found"}), 404
 
     return success(user.to_dict())
+
+
+@users.route("/api/auth/refresh", methods=["POST"])
+@jwt_required(refresh=True)
+def refresh():
+    """
+        Issues a new access token using a valid refresh token
+    """
+    email = get_jwt_identity()
+    new_token = create_access_token(identity=email)
+    return success({"token": new_token})

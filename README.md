@@ -114,7 +114,7 @@ En producción: Nginx sirve el frontend estático (puerto 80) y hace proxy de `/
 | Recurso    | URL base          | Métodos                        |
 |------------|-------------------|--------------------------------|
 | Usuarios   | `/api/users`      | GET, POST, PUT, DELETE         |
-| Auth       | `/api/auth`       | POST `/login`, GET `/me`       |
+| Auth       | `/api/auth`       | POST `/login`, GET `/me`, POST `/refresh` |
 | Habilidades| `/api/skills`     | GET, POST, PUT, DELETE         |
 | Categorías | `/api/categories` | GET, POST, PUT, DELETE         |
 | Mensajes   | `/api/messages`   | GET, POST, PUT, DELETE         |

@@ -5,6 +5,7 @@ import Footer from "../assets/components/Footer";
 import "../assets/styles/UserProfile.css";
 import { env } from "../environ";
 import { useStore } from "../hooks/useStore";
+import { apiFetch } from "../services/api";
 import CropperModal from "../assets/components/CropperModal";
 import AddSkillModal from "../assets/components/AddSkillModal";
 import MessagingButton from "../assets/components/MessagingButton";
@@ -87,24 +88,22 @@ function UserProfile() {
 
     const fetchUser = async () => {
       try {
-        const response = await fetch(`${env.api}/api/auth/me`, {
+        const response = await apiFetch(`${env.api}/api/auth/me`, {
           method: "GET",
-          headers: {
-            Authorization: `Bearer ${userToken}`,
-            Accept: "application/json",
-          },
         });
 
         if (!response.ok) {
           localStorage.removeItem("token");
-          console.error("Error al obtener usuario:", response.status);
+          localStorage.removeItem("refresh_token");
+          navigate("/login");
           return;
         }
 
         const data = await response.json();
-        setUser(data);
-        setFormData(data);
-        dispatch({ type: "SET_USER", payload: data });
+        const userData = data?.data;
+        setUser(userData);
+        setFormData(userData);
+        dispatch({ type: "SET_USER", payload: userData });
       } catch (error) {
         console.error("Error al cargar usuario:", error);
       }
