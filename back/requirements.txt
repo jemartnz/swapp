@@ -2,13 +2,15 @@ flask
 sqlalchemy
 flask-cors
 flask-sqlalchemy
-flask-admin
+flask-swagger
 flask-migrate
 psycopg2
 python-dotenv
-wtforms
 flask-jwt-extended
 google-auth
 requests
 gunicorn
 cloudinary
+pytest
+pytest-flask
+pytest-cov
