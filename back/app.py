@@ -13,7 +13,6 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from back.utils import APIException
 # from back.utils import generate_sitemap
-from back.admin import setup_admin
 from back.models import db
 from back.urls.user import users
 from back.urls.skill import skills
@@ -65,7 +64,6 @@ MIGRATIONS_DIR = os.path.join(BASE_DIR, "migrations")
 MIGRATE = Migrate(app, db, directory=MIGRATIONS_DIR)
 db.init_app(app)
 CORS(app)
-setup_admin(app)
 jwt = JWTManager(app)
 
 
