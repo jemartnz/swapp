@@ -55,7 +55,7 @@ def get_message(message_id):
         Get a single message
     """
     try:
-        msg = Message.query.get_or_404(message_id)
+        msg = db.get_or_404(Message, message_id)
         return success(msg.to_dict())
 
     except SQLAlchemyError as e:
@@ -110,7 +110,7 @@ def update_message(message_id):
     data = request.get_json() or {}
 
     try:
-        msg = Message.query.get_or_404(message_id)
+        msg = db.get_or_404(Message, message_id)
 
         current = get_current_user()
         if not current or current.id != msg.sender_id:
@@ -145,7 +145,7 @@ def delete_message(message_id):
         Delete a message
     """
     try:
-        msg = Message.query.get(message_id)
+        msg = db.session.get(Message, message_id)
 
         if not msg:
             return not_found("Message")

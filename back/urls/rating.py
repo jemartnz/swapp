@@ -32,7 +32,7 @@ def get_rating(rating_id):
         Get a single rating
     """
     try:
-        rating = Rating.query.get(rating_id)
+        rating = db.session.get(Rating, rating_id)
 
         if not rating:
             return not_found("Rating")
@@ -65,8 +65,8 @@ def create_rating():
 
     try:
 
-        exchange = Exchange.query.get_or_404(data["exchange_id"])
-        rater = User.query.get_or_404(data["rater_id"])
+        exchange = db.get_or_404(Exchange, data["exchange_id"])
+        rater = db.get_or_404(User, data["rater_id"])
 
         if rater.id == exchange.offerer_id:
             rated_id = exchange.demander_id
@@ -76,7 +76,7 @@ def create_rating():
         if not rated_id:
             return bad_request("The exchange does not have a demander assigned yet")
 
-        rated = User.query.get_or_404(rated_id)
+        rated = db.get_or_404(User, rated_id)
 
         rating = Rating(
             exchange_id=exchange.id,
@@ -110,7 +110,7 @@ def update_rating(rating_id):
     data = request.get_json() or {}
 
     try:
-        rating = Rating.query.get(rating_id)
+        rating = db.session.get(Rating, rating_id)
 
         if not rating:
             return not_found("Rating")
@@ -149,7 +149,7 @@ def delete_rating(rating_id):
         Delete a rating
     """
     try:
-        rating = Rating.query.get(rating_id)
+        rating = db.session.get(Rating, rating_id)
 
         if not rating:
             return not_found("Rating")

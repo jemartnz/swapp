@@ -50,7 +50,7 @@ def get_user(user_id):
         Get a single user
     """
     try:
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
 
         if not user:
             return not_found("User")
@@ -69,7 +69,7 @@ def get_users_by_category(category_id):
     """
         Returns all users that have skills in a given category
     """
-    category = Category.query.get_or_404(category_id)
+    category = db.get_or_404(Category, category_id)
 
     skill_ids = [s.id for s in category.skills]
 
@@ -110,7 +110,7 @@ def delete_user(user_id):
     if not current or current.id != user_id:
         return forbidden()
 
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return not_found("User")
 
@@ -161,7 +161,7 @@ def create_user():
                     setattr(usr, f, datetime.strptime(
                         data[f], "%Y-%m-%d").date())
                 elif f == "skill_id":
-                    skill = Skill.query.get(data[f])
+                    skill = db.session.get(Skill, data[f])
                     if skill:
                         usr.skills.append(skill)
                 else:
@@ -201,7 +201,7 @@ def update_user(user_id):
         return bad_request(errors[0])
 
     try:
-        user = User.query.get_or_404(user_id)
+        user = db.get_or_404(User, user_id)
 
         fields = [
             "first_name", "last_name", "email",
@@ -241,9 +241,9 @@ def update_user_skill(user_id):
 
     data = request.get_json() or {}
     try:
-        usr = User.query.get(user_id)
+        usr = db.session.get(User, user_id)
         skill_id = data.get("associate") or data.get("disassociate")
-        skill = Skill.query.get(skill_id)
+        skill = db.session.get(Skill, skill_id)
 
         if not usr or not skill:
             return not_found("User or Skill")

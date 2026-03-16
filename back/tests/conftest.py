@@ -1,6 +1,17 @@
 """
 Shared fixtures for all test modules.
+
+DATABASE_URL is overridden via os.environ BEFORE back.app is imported so that
+Flask-SQLAlchemy builds its engine with SQLite in-memory from the start.
+StaticPool ensures every connection shares the same in-memory database.
 """
+import os
+
+# Must be set before importing back.app so the module-level DB_URL detection
+# in app.py picks up SQLite instead of whatever is in the real .env file.
+os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+os.environ.setdefault("FLASK_APP_KEY", "test-secret-key")
+
 import pytest
 from sqlalchemy.pool import StaticPool
 from flask_jwt_extended import create_access_token
@@ -15,17 +26,18 @@ from back.models import db, User, Category, Skill, Exchange, Message, Rating
 def app():
     """
     Flask app configured for testing.
-    Uses SQLite in-memory with StaticPool so all connections share
-    the same in-memory database within a single test.
+    The engine is lazily created on the first db.create_all() call and uses
+    SQLite in-memory + StaticPool (set via SQLALCHEMY_ENGINE_OPTIONS).
+    Once created the engine is reused across all function-scoped tests;
+    create_all / drop_all manage the schema isolation between tests.
     """
     flask_app.config.update({
         "TESTING": True,
-        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
         "SQLALCHEMY_ENGINE_OPTIONS": {
             "connect_args": {"check_same_thread": False},
             "poolclass": StaticPool,
         },
-        "JWT_SECRET_KEY": "test-secret",
+        "JWT_SECRET_KEY": "test-secret-key-long-enough-for-hmac-sha256",
         "DEBUG": False,
         "GOOGLE_CLIENT_ID": "test-client-id",
     })

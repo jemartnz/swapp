@@ -32,7 +32,7 @@ def get_exchange(exchange_id):
         Get a specific exchange
     """
     try:
-        exchange = Exchange.query.get(exchange_id)
+        exchange = db.session.get(Exchange, exchange_id)
 
         if not exchange:
             return not_found("Exchange")
@@ -99,8 +99,8 @@ def create_exchange():
 
     try:
 
-        offerer = User.query.get_or_404(data["offerer_id"])
-        skill = Skill.query.get_or_404(data["skill_id"])
+        offerer = db.get_or_404(User, data["offerer_id"])
+        skill = db.get_or_404(Skill, data["skill_id"])
 
         exchange = Exchange(
             offerer_id=offerer.id,
@@ -130,7 +130,7 @@ def complete_exchange(exchange_id):
         Mark an exchange as completed
     """
     try:
-        exchange = Exchange.query.get(exchange_id)
+        exchange = db.session.get(Exchange, exchange_id)
 
         if not exchange:
             return not_found("Exchange")
@@ -191,7 +191,7 @@ def assign_demander(exchange_id):
         if not demander_id:
             return bad_request("Must provide user_id")
 
-        exchange = Exchange.query.get(exchange_id)
+        exchange = db.session.get(Exchange, exchange_id)
         if not exchange:
             return not_found("Exchange")
 
@@ -201,7 +201,7 @@ def assign_demander(exchange_id):
         if exchange.offerer_id == demander_id:
             return bad_request("The offerer cannot be their own demander")
 
-        demander = User.query.get(demander_id)
+        demander = db.session.get(User, demander_id)
         if not demander:
             return not_found("Demander user")
 
@@ -224,7 +224,7 @@ def delete_exchange(exchange_id):
         Delete an exchange (only if not completed)
     """
     try:
-        exchange = Exchange.query.get(exchange_id)
+        exchange = db.session.get(Exchange, exchange_id)
 
         if not exchange:
             return not_found("Exchange")
