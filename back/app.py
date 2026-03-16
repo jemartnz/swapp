@@ -11,7 +11,6 @@ from flask import send_from_directory
 from flask_migrate import Migrate
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
-from authlib.integrations.flask_client import OAuth
 from back.utils import APIException
 # from back.utils import generate_sitemap
 from back.admin import setup_admin
@@ -59,6 +58,7 @@ app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=6)
 app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)
 app.config["SECRET_KEY"] = os.getenv("FLASK_APP_KEY")
 app.config["DEBUG"] = os.getenv("FLASK_DEBUG", "0") == "1"
+app.config["GOOGLE_CLIENT_ID"] = os.getenv("GOOGLE_CLIENT_ID")
 
 
 MIGRATIONS_DIR = os.path.join(BASE_DIR, "migrations")
@@ -67,7 +67,6 @@ db.init_app(app)
 CORS(app)
 setup_admin(app)
 jwt = JWTManager(app)
-oauth = OAuth()
 
 
 @app.errorhandler(APIException)

@@ -29,6 +29,7 @@ class User(db.Model):
         default="away",
         nullable=False)
     accepts_terms = db.Column(db.Boolean, default=False, nullable=False)
+    google_id = db.Column(db.String(255), unique=True, nullable=True)
     created_at = db.Column(
         db.DateTime, default=lambda: datetime.now(timezone.utc))
 

@@ -8,7 +8,7 @@ psycopg2
 python-dotenv
 wtforms
 flask-jwt-extended
-authlib
+google-auth
 requests
 gunicorn
 cloudinary

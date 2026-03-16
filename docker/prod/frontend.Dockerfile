@@ -6,6 +6,10 @@ COPY front/package.json front/package-lock.json* ./
 RUN npm install
 
 COPY front/ ./
+
+ARG VITE_GOOGLE_CLIENT_ID
+ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
+
 RUN npm run build
 
 FROM nginx:alpine
