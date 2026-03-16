@@ -31,7 +31,6 @@ venv.bak/
 instance/
 *.log
 
-*.log
 *.pot
 *.mo
 *.swp
@@ -59,6 +58,10 @@ htmlcov/
 *.lock
 
 Thumbs.db
+
+# --- Removed files (prevent accidental re-creation) ---
+back/admin.py
+back/admin_views.py
 
 # --- Front-End ---
 logs
