@@ -2,9 +2,12 @@ import "../assets/styles/Register.css";
 import React, { useState, useEffect } from "react";
 import { registerUser } from "../services/api";
 import { Link, useNavigate } from "react-router";
+import { GoogleLogin } from "@react-oauth/google";
 import { env } from "../environ";
+import { useStore } from "../hooks/useStore";
 
 function Register() {
+  const { dispatch } = useStore();
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -28,7 +31,36 @@ function Register() {
   const [showAlert, setShowAlert] = useState(false);
   const [errors, setErrors] = useState({});
   const [showModal, setShowModal] = useState(false);
+  const [googleError, setGoogleError] = useState("");
   const navigate = useNavigate();
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      const response = await fetch(`${env.api}/api/auth/google/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_token: credentialResponse.credential }),
+      });
+
+      if (!response.ok) throw new Error("Error de autenticación con Google");
+
+      const data = await response.json();
+      const token = data?.data?.token;
+      const refreshToken = data?.data?.refresh_token;
+
+      if (token) {
+        localStorage.setItem("token", JSON.stringify(token));
+        if (refreshToken) localStorage.setItem("refresh_token", refreshToken);
+        dispatch({ type: "SET_TOKEN", payload: token });
+        navigate("/perfil");
+      } else {
+        setGoogleError("No se pudo registrar con Google.");
+      }
+    } catch (err) {
+      console.error("Error Google register:", err);
+      setGoogleError("Error al registrarse con Google");
+    }
+  };
 
   useEffect(() => {
     fetch(`${env.api}/api/categories`)
@@ -420,6 +452,24 @@ function Register() {
               <button type="submit" className="btn btn-main1 my-3">
                 Registrate
               </button>
+            </div>
+
+            <div className="text-center mb-2">
+              <span className="text-muted" style={{ fontSize: "0.85rem" }}>— O regístrate con —</span>
+            </div>
+
+            {googleError && (
+              <p className="text-danger text-center small">{googleError}</p>
+            )}
+
+            <div className="d-flex justify-content-center mb-3">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => setGoogleError("Error al registrarse con Google")}
+                locale="es"
+                text="signup_with"
+                shape="rectangular"
+              />
             </div>
           </form>
           {showModal && (

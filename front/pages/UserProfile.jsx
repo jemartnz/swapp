@@ -51,38 +51,9 @@ function UserProfile() {
   useEffect(() => {
     const rawToken = localStorage.getItem("token");
     const userToken = rawToken ? rawToken.replace(/^"|"$/g, "") : null;
-    const googleUser = localStorage.getItem("user");
 
-    if (!userToken && !googleUser) {
+    if (!userToken) {
       navigate("/login");
-      return;
-    }
-
-    // If coming from Google
-    if (googleUser) {
-      const data = JSON.parse(googleUser);
-      setUser({
-        id: data.id,
-        first_name: data.first_name,
-        last_name: data.last_name,
-        email: data.email,
-        profile_picture: data.profile_picture,
-        birth_date: null,
-        gender: "",
-        description: "",
-        skills: [],
-      });
-
-      setFormData({
-        first_name: data.first_name,
-        last_name: data.last_name,
-        email: data.email,
-        profile_picture: data.profile_picture,
-        birth_date: "",
-        gender: "",
-        description: "",
-      });
-
       return;
     }
 

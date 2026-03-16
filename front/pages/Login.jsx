@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "../assets/styles/Login.css";
 import { Link, useNavigate } from "react-router";
+import { GoogleLogin } from "@react-oauth/google";
 import { env } from "../environ";
 import { useStore } from "../hooks/useStore";
 
@@ -10,6 +11,38 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+
+  const saveTokensAndRedirect = (token, refreshToken) => {
+    localStorage.setItem("token", JSON.stringify(token));
+    if (refreshToken) localStorage.setItem("refresh_token", refreshToken);
+    dispatch({ type: "SET_TOKEN", payload: token });
+    navigate("/perfil");
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      const response = await fetch(`${env.api}/api/auth/google/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_token: credentialResponse.credential }),
+      });
+
+      if (!response.ok) throw new Error("Error de autenticación con Google");
+
+      const data = await response.json();
+      const token = data?.data?.token;
+      const refreshToken = data?.data?.refresh_token;
+
+      if (token) {
+        saveTokensAndRedirect(token, refreshToken);
+      } else {
+        setError("No se pudo iniciar sesión con Google.");
+      }
+    } catch (err) {
+      console.error("Error Google login:", err);
+      setError("Error al iniciar sesión con Google");
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -42,10 +75,7 @@ const Login = () => {
       const refreshToken = data?.data?.refresh_token;
 
       if (token) {
-        localStorage.setItem("token", JSON.stringify(token));
-        if (refreshToken) localStorage.setItem("refresh_token", refreshToken);
-        dispatch({ type: "SET_TOKEN", payload: token });
-        navigate("/perfil");
+        saveTokensAndRedirect(token, refreshToken);
       } else {
         setError("Correo o contraseña incorrectos.");
       }
@@ -114,6 +144,20 @@ const Login = () => {
                 Iniciar sesión
               </button>
             </form>
+
+            <div className="text-center mt-3 mb-2">
+              <span className="text-muted" style={{ fontSize: "0.85rem" }}>— O continúa con —</span>
+            </div>
+
+            <div className="d-flex justify-content-center mb-3">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => setError("Error al iniciar sesión con Google")}
+                locale="es"
+                text="signin_with"
+                shape="rectangular"
+              />
+            </div>
 
             <p className="mt-3 text-center">
               ¿No tienes cuenta?{" "}

@@ -9,11 +9,7 @@ function Navbar() {
   const [user, setUser] = useState(null);
   const [categories, setCategories] = useState([]);
   const navigate = useNavigate();
-  const isLogged = !!(
-    user ||
-    localStorage.getItem("token") ||
-    localStorage.getItem("user")
-  );
+  const isLogged = !!(user || localStorage.getItem("token"));
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const FEATURED_CATEGORIES = [
@@ -46,20 +42,7 @@ function Navbar() {
         ? store.user
         : null;
 
-    const fromLocal = JSON.parse(localStorage.getItem("user") || "null");
-
-    if (fromStore) {
-      setUser(fromStore);
-    } else if (fromLocal) {
-      setUser({
-        first_name: fromLocal.first_name,
-        last_name: fromLocal.last_name,
-        email: fromLocal.email,
-        profile_picture: fromLocal.picture,
-      });
-    } else {
-      setUser(null);
-    }
+    setUser(fromStore || null);
 
     const fetchCategories = async () => {
       try {
@@ -79,27 +62,13 @@ function Navbar() {
     setShowLogoutModal(true);
   };
 
-  const confirmLogout = async () => {
-    try {
-      const googleUser = localStorage.getItem("user");
-
-      if (googleUser) {
-        await fetch(`${env.api}/api/logout`, { method: "POST" });
-        localStorage.removeItem("user");
-      }
-
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      dispatch({ type: "SET_USER", payload: {} });
-      dispatch({ type: "SET_TOKEN", payload: "" });
-      setUser(null);
-
-      navigate("/login");
-    } catch (error) {
-      console.error("Error al cerrar sesión:", error);
-      localStorage.clear();
-      navigate("/login");
-    }
+  const confirmLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("refresh_token");
+    dispatch({ type: "SET_USER", payload: {} });
+    dispatch({ type: "SET_TOKEN", payload: "" });
+    setUser(null);
+    navigate("/login");
   };
 
   return (

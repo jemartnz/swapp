@@ -2,12 +2,14 @@
     Users
 """
 from datetime import datetime
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from flask_jwt_extended import create_access_token, create_refresh_token
 from flask_jwt_extended import jwt_required
 from flask_jwt_extended import get_jwt_identity
+from google.oauth2 import id_token as google_id_token
+from google.auth.transport import requests as google_requests
 from back.models import db, User, Skill, Category, Rating
 from back.utils import get_current_user, error_response, validate, success
 
@@ -338,3 +340,77 @@ def refresh():
     email = get_jwt_identity()
     new_token = create_access_token(identity=email)
     return success({"token": new_token})
+
+
+@users.route("/api/auth/google/verify", methods=["POST"])
+def google_verify():
+    """
+        Verifies a Google id_token, creates or retrieves the user,
+        and returns app JWT tokens
+    """
+    data = request.get_json() or {}
+    token = data.get("id_token")
+
+    if not token:
+        return jsonify({"error": "'id_token' is required"}), 400
+
+    client_id = current_app.config.get("GOOGLE_CLIENT_ID")
+    if not client_id:
+        return jsonify({"error": "Google OAuth not configured"}), 500
+
+    try:
+        id_info = google_id_token.verify_oauth2_token(
+            token, google_requests.Request(), client_id
+        )
+    except ValueError as e:
+        return jsonify({"error": "Invalid Google token"}), 401
+
+    google_id = id_info.get("sub")
+    email = id_info.get("email")
+    first_name = id_info.get("given_name", "")
+    last_name = id_info.get("family_name", "")
+    picture = id_info.get("picture")
+
+    if not email or not google_id:
+        return jsonify({"error": "Incomplete Google profile"}), 400
+
+    try:
+        user = User.query.filter_by(google_id=google_id).first()
+
+        if not user:
+            user = User.query.filter_by(email=email).first()
+            if user:
+                user.google_id = google_id
+            else:
+                user = User(
+                    first_name=first_name,
+                    last_name=last_name,
+                    email=email,
+                    profile_picture=picture,
+                    google_id=google_id,
+                    accepts_terms=True,
+                )
+                db.session.add(user)
+
+        db.session.commit()
+
+        access_token = create_access_token(identity=user.email)
+        refresh_token = create_refresh_token(identity=user.email)
+        return success({
+            "token": access_token,
+            "refresh_token": refresh_token,
+            "email": user.email,
+        })
+
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        return error_response("Database error", e)
+
+
+@users.route("/api/logout", methods=["POST"])
+def logout():
+    """
+        Stateless logout — JWT is invalidated client-side.
+        This endpoint exists for frontend compatibility.
+    """
+    return success(message="Logged out")

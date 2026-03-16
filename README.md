@@ -6,8 +6,8 @@
 
 ## Tecnologías
 
-- **Frontend**: React 19, React Router 7, Vite 7, Bootstrap 5
-- **Backend**: Flask, SQLAlchemy, Flask-JWT-Extended
+- **Frontend**: React 19, React Router 7, Vite 7, Bootstrap 5, `@react-oauth/google`
+- **Backend**: Flask, SQLAlchemy, Flask-JWT-Extended, `google-auth`
 - **Base de datos**: PostgreSQL 16
 - **Media**: Cloudinary (fotos de perfil)
 - **Despliegue**: Docker Compose (dev & prod), Render, GitHub Container Registry
@@ -28,10 +28,14 @@ cp back/.env.example back/.env
 cp front/.env.example front/.env
 cp db.env.example db.env
 
-# 3. Levantar los servicios
+# 3. Configurar Google OAuth (opcional, necesario para login con Google)
+# En back/.env: GOOGLE_CLIENT_ID=<tu-client-id>.apps.googleusercontent.com
+# En front/.env: VITE_GOOGLE_CLIENT_ID=<tu-client-id>.apps.googleusercontent.com
+
+# 4. Levantar los servicios
 docker compose up --build
 
-# 4. Ejecutar migraciones y seed (en otra terminal)
+# 5. Ejecutar migraciones y seed (en otra terminal)
 docker compose exec backend flask db upgrade
 docker compose exec backend python -m back.init.seed_data
 docker compose exec backend python -m back.init.seed_users
@@ -46,12 +50,16 @@ Los cambios en `back/` y `front/` se reflejan automáticamente (hot-reload).
 ## Producción
 
 ```bash
-# Levantar con Docker
+# Levantar con Docker (VITE_GOOGLE_CLIENT_ID se bake en el build del frontend)
+VITE_GOOGLE_CLIENT_ID=<client-id>.apps.googleusercontent.com \
 docker compose -f compose.prod.yml up --build
 
 # Construir imágenes para el registry
 docker build -f docker/prod/backend.Dockerfile -t ghcr.io/jemartnz/swapp-backend .
-docker build -f docker/prod/frontend.Dockerfile -t ghcr.io/jemartnz/swapp-frontend .
+docker build \
+  --build-arg VITE_GOOGLE_CLIENT_ID=<client-id>.apps.googleusercontent.com \
+  -f docker/prod/frontend.Dockerfile \
+  -t ghcr.io/jemartnz/swapp-frontend .
 ```
 
 En producción: Nginx sirve el frontend estático (puerto 80) y hace proxy de `/api/` al backend (Gunicorn, puerto 5000).
@@ -114,7 +122,8 @@ En producción: Nginx sirve el frontend estático (puerto 80) y hace proxy de `/
 | Recurso    | URL base          | Métodos                        |
 |------------|-------------------|--------------------------------|
 | Usuarios   | `/api/users`      | GET, POST, PUT, DELETE         |
-| Auth       | `/api/auth`       | POST `/login`, GET `/me`, POST `/refresh` |
+| Auth       | `/api/auth`       | POST `/login`, GET `/me`, POST `/refresh`, POST `/google/verify` |
+| Logout     | `/api/logout`     | POST                           |
 | Habilidades| `/api/skills`     | GET, POST, PUT, DELETE         |
 | Categorías | `/api/categories` | GET, POST, PUT, DELETE         |
 | Mensajes   | `/api/messages`   | GET, POST, PUT, DELETE         |
