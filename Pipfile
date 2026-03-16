@@ -7,6 +7,9 @@ verify_ssl = true
 flake8 = "*"
 black = "*"
 eralchemy = {extras = ["graphviz"], version = "*"}
+pytest = "*"
+pytest-flask = "*"
+pytest-cov = "*"
 
 [packages]
 flask = "*"
@@ -32,3 +35,5 @@ init="flask db init"
 migrate="flask db migrate"
 upgrade="flask db upgrade"
 diagram = "python scripts/generate_diagram.py"
+test = "pytest"
+test-cov = "pytest --cov=back --cov-report=term-missing"
