@@ -1,10 +1,11 @@
 """
     Messages
 """
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, request
 from flask_jwt_extended import jwt_required
 from back.models import db, Message
-from back.utils import get_current_user, error_response, validate, success
+from back.utils import (get_current_user, error_response, validate, success,
+                        forbidden, bad_request, not_found)
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 messages = Blueprint('messages', __name__)
@@ -71,7 +72,7 @@ def create_message():
     data = request.get_json() or {}
     current = get_current_user()
     if not current or current.id != data.get("sender_id"):
-        return jsonify({"error": "Forbidden"}), 403
+        return forbidden()
 
     errors = validate(data, {
         "content":     ["required"],
@@ -79,7 +80,7 @@ def create_message():
         "receiver_id": ["required"],
     })
     if errors:
-        return jsonify({"error": errors[0]}), 400
+        return bad_request(errors[0])
 
     try:
         msg = Message(
@@ -93,7 +94,7 @@ def create_message():
 
     except IntegrityError:
         db.session.rollback()
-        return jsonify({"error": "Invalid sender or receiver"}), 400
+        return bad_request("Invalid sender or receiver")
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -113,10 +114,10 @@ def update_message(message_id):
 
         current = get_current_user()
         if not current or current.id != msg.sender_id:
-            return jsonify({"error": "Forbidden"}), 403
+            return forbidden()
 
         if not data:
-            return jsonify({"error": "Incomplete parameters"}), 400
+            return bad_request("Incomplete parameters")
 
         fields = [
             "content", "seen"
@@ -147,11 +148,11 @@ def delete_message(message_id):
         msg = Message.query.get(message_id)
 
         if not msg:
-            return jsonify({"error": "Message not found"}), 404
+            return not_found("Message")
 
         current = get_current_user()
         if not current or current.id != msg.sender_id:
-            return jsonify({"error": "Forbidden"}), 403
+            return forbidden()
 
         db.session.delete(msg)
         db.session.commit()

@@ -2,10 +2,10 @@
     Skills
 """
 from sqlalchemy.exc import IntegrityError
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, request
 from flask_jwt_extended import jwt_required
 from back.models import db, Skill
-from back.utils import error_response, validate, success
+from back.utils import error_response, validate, success, bad_request
 
 skills = Blueprint('skills', __name__)
 
@@ -50,7 +50,7 @@ def create_skill():
         "category_id": ["required"],
     })
     if errors:
-        return jsonify({"error": errors[0]}), 400
+        return bad_request(errors[0])
 
     new_skill = Skill(
         name=data["name"],
@@ -63,7 +63,7 @@ def create_skill():
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
-        return jsonify({"error": "Skill already exists"}), 400
+        return bad_request("Skill already exists")
     return success({"id": new_skill.id}, message="Skill created successfully", status=201)
 
 

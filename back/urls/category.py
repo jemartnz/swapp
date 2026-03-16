@@ -2,10 +2,10 @@
     Categories
 """
 from sqlalchemy.exc import IntegrityError
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, request
 from flask_jwt_extended import jwt_required
 from back.models import db, Category
-from back.utils import error_response, validate, success
+from back.utils import error_response, validate, success, bad_request
 
 categories = Blueprint('categories', __name__)
 
@@ -45,7 +45,7 @@ def create_category():
 
     errors = validate(data, {"name": ["required"]})
     if errors:
-        return jsonify({"error": errors[0]}), 400
+        return bad_request(errors[0])
 
     name = data.get("name")
     new_category = Category(name=name)
@@ -54,7 +54,7 @@ def create_category():
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
-        return jsonify({"error": "Category already exists"}), 400
+        return bad_request("Category already exists")
 
     return success(new_category.to_dict(), message="Category created successfully", status=201)
 
