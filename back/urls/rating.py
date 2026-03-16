@@ -1,10 +1,11 @@
 """
     Ratings
 """
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, request
 from flask_jwt_extended import jwt_required
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from back.utils import get_current_user, error_response, validate, success
+from back.utils import (get_current_user, error_response, validate, success,
+                        forbidden, bad_request, not_found)
 from back.models import db, User, Rating, Exchange
 
 ratings = Blueprint('ratings', __name__)
@@ -34,7 +35,7 @@ def get_rating(rating_id):
         rating = Rating.query.get(rating_id)
 
         if not rating:
-            return jsonify({"error": "Rating not found"}), 404
+            return not_found("Rating")
 
         return success(rating.to_dict())
 
@@ -52,7 +53,7 @@ def create_rating():
     data = request.get_json() or {}
     current = get_current_user()
     if not current or current.id != data.get("rater_id"):
-        return jsonify({"error": "Forbidden"}), 403
+        return forbidden()
 
     errors = validate(data, {
         "exchange_id": ["required"],
@@ -60,7 +61,7 @@ def create_rating():
         "score":       ["required", ("min", 1), ("max", 5)],
     })
     if errors:
-        return jsonify({"error": errors[0]}), 400
+        return bad_request(errors[0])
 
     try:
 
@@ -73,9 +74,7 @@ def create_rating():
             rated_id = exchange.offerer_id
 
         if not rated_id:
-            return jsonify({
-                "error":
-                "The exchange does not have a demander assigned yet"}), 400
+            return bad_request("The exchange does not have a demander assigned yet")
 
         rated = User.query.get_or_404(rated_id)
 
@@ -95,7 +94,7 @@ def create_rating():
 
     except IntegrityError:
         db.session.rollback()
-        return jsonify({"error": "Invalid parameters"}), 400
+        return bad_request("Invalid parameters")
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -114,17 +113,17 @@ def update_rating(rating_id):
         rating = Rating.query.get(rating_id)
 
         if not rating:
-            return jsonify({"error": "Rating not found"}), 404
+            return not_found("Rating")
 
         current = get_current_user()
         if not current or current.id != rating.rater_id:
-            return jsonify({"error": "Forbidden"}), 403
+            return forbidden()
 
         errors = validate(data, {
             "score": [("min", 1), ("max", 5)],
         })
         if errors:
-            return jsonify({"error": errors[0]}), 400
+            return bad_request(errors[0])
 
         fields = [
             "score", "comment"
@@ -153,11 +152,11 @@ def delete_rating(rating_id):
         rating = Rating.query.get(rating_id)
 
         if not rating:
-            return jsonify({"error": "Rating not found"}), 404
+            return not_found("Rating")
 
         current = get_current_user()
         if not current or current.id != rating.rater_id:
-            return jsonify({"error": "Forbidden"}), 403
+            return forbidden()
 
         db.session.delete(rating)
         db.session.commit()

@@ -97,6 +97,16 @@ def not_found(resource="Resource"):
     return jsonify({"error": f"{resource} not found"}), 404
 
 
+def forbidden():
+    """Return a standardised 403 Forbidden response."""
+    return jsonify({"error": "Forbidden"}), 403
+
+
+def bad_request(message):
+    """Return a standardised 400 Bad Request response."""
+    return jsonify({"error": message}), 400
+
+
 def error_response(message, e, status=500):
     """Return a JSON error response. Includes exception detail only in DEBUG."""
     body = {"error": message}

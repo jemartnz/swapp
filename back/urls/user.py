@@ -11,7 +11,8 @@ from flask_jwt_extended import get_jwt_identity
 from google.oauth2 import id_token as google_id_token
 from google.auth.transport import requests as google_requests
 from back.models import db, User, Skill, Category, Rating
-from back.utils import get_current_user, error_response, validate, success
+from back.utils import (get_current_user, error_response, validate, success,
+                        forbidden, bad_request, not_found)
 
 users = Blueprint('users', __name__)
 
@@ -52,7 +53,7 @@ def get_user(user_id):
         user = User.query.get(user_id)
 
         if not user:
-            return jsonify({"error": "User not found"}), 404
+            return not_found("User")
 
         usr = user.to_dict()
         usr["skills"] = [s.to_dict() for s in user.skills]
@@ -107,11 +108,11 @@ def delete_user(user_id):
     """
     current = get_current_user()
     if not current or current.id != user_id:
-        return jsonify({"error": "Forbidden"}), 403
+        return forbidden()
 
     user = User.query.get(user_id)
     if not user:
-        return jsonify({"error": "User not found"}), 404
+        return not_found("User")
 
     try:
         db.session.delete(user)
@@ -139,7 +140,7 @@ def create_user():
         "birth_date": ["date"],
     })
     if errors:
-        return jsonify({"error": errors[0]}), 400
+        return bad_request(errors[0])
 
     try:
         usr = User(
@@ -172,7 +173,7 @@ def create_user():
 
     except IntegrityError:
         db.session.rollback()
-        return jsonify({"error": "Email is already registered"}), 400
+        return bad_request("Email is already registered")
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -187,7 +188,7 @@ def update_user(user_id):
     """
     current = get_current_user()
     if not current or current.id != user_id:
-        return jsonify({"error": "Forbidden"}), 403
+        return forbidden()
 
     data = request.get_json() or {}
 
@@ -197,7 +198,7 @@ def update_user(user_id):
         "birth_date": ["date"],
     })
     if errors:
-        return jsonify({"error": errors[0]}), 400
+        return bad_request(errors[0])
 
     try:
         user = User.query.get_or_404(user_id)
@@ -221,7 +222,7 @@ def update_user(user_id):
 
     except IntegrityError:
         db.session.rollback()
-        return jsonify({"error": "Email is already registered"}), 400
+        return bad_request("Email is already registered")
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -236,7 +237,7 @@ def update_user_skill(user_id):
     """
     current = get_current_user()
     if not current or current.id != user_id:
-        return jsonify({"error": "Forbidden"}), 403
+        return forbidden()
 
     data = request.get_json() or {}
     try:
@@ -245,9 +246,7 @@ def update_user_skill(user_id):
         skill = Skill.query.get(skill_id)
 
         if not usr or not skill:
-            return jsonify({
-                "error": "User or Skill not found"
-            }), 404
+            return not_found("User or Skill")
 
         if (not data) or ("associate" in data and "disassociate" in data):
             return jsonify({
@@ -267,7 +266,7 @@ def update_user_skill(user_id):
 
     except IntegrityError:
         db.session.rollback()
-        return jsonify({"error": "Email is already registered"}), 400
+        return bad_request("Email is already registered")
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -288,7 +287,7 @@ def login():
         "password": ["required"],
     })
     if errors:
-        return jsonify({"error": errors[0]}), 400
+        return bad_request(errors[0])
 
     email = data.get("email")
     passw = data.get("password")
@@ -314,19 +313,19 @@ def login():
 
 @users.route("/api/auth/me", methods=["GET"])
 @jwt_required()
-def get_current_user():
+def get_me():
     """
         Returns the user associated with the authorization token
     """
     email = get_jwt_identity()
 
     if not email:
-        return jsonify({"error": "Token without email"}), 400
+        return bad_request("Token without email")
 
     user = User.query.filter_by(email=email).first()
 
     if not user:
-        return jsonify({"error": "User not found"}), 404
+        return not_found("User")
 
     return success(user.to_dict())
 
@@ -352,7 +351,7 @@ def google_verify():
     token = data.get("id_token")
 
     if not token:
-        return jsonify({"error": "'id_token' is required"}), 400
+        return bad_request("'id_token' is required")
 
     client_id = current_app.config.get("GOOGLE_CLIENT_ID")
     if not client_id:
@@ -372,7 +371,7 @@ def google_verify():
     picture = id_info.get("picture")
 
     if not email or not google_id:
-        return jsonify({"error": "Incomplete Google profile"}), 400
+        return bad_request("Incomplete Google profile")
 
     try:
         user = User.query.filter_by(google_id=google_id).first()

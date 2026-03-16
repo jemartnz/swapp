@@ -1,7 +1,7 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request
 from flask_jwt_extended import jwt_required
 from back.models import db, User
-from back.utils import get_current_user, error_response, success
+from back.utils import get_current_user, error_response, success, forbidden, bad_request, not_found
 from back.cloudinary.config import cloudinary
 import cloudinary.uploader
 from werkzeug.utils import secure_filename
@@ -18,15 +18,15 @@ def upload_profile_picture(user_id):
     """
     current = get_current_user()
     if not current or current.id != user_id:
-        return jsonify({"error": "Forbidden"}), 403
+        return forbidden()
 
     try:
         user = User.query.get(user_id)
         if not user:
-            return jsonify({"error": "User not found"}), 404
+            return not_found("User")
 
         if "image" not in request.files:
-            return jsonify({"error": "No image was sent"}), 400
+            return bad_request("No image was sent")
 
         image = request.files["image"]
         safe_name = secure_filename(image.filename)
@@ -42,10 +42,10 @@ def upload_profile_picture(user_id):
         user.profile_picture = result.get("secure_url")
         db.session.commit()
 
-        return jsonify({
-            "message": "Profile picture updated",
-            "profile_picture": user.profile_picture
-        }), 200
+        return success(
+            {"profile_picture": user.profile_picture},
+            message="Profile picture updated"
+        )
 
     except Exception as e:
         db.session.rollback()

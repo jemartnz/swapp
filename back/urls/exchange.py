@@ -1,10 +1,11 @@
 """
     Exchanges
 """
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, request
 from flask_jwt_extended import jwt_required
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from back.utils import get_current_user, error_response, validate, success
+from back.utils import (get_current_user, error_response, validate, success,
+                        forbidden, bad_request, not_found)
 from back.models import db, Exchange, User, Skill
 
 exchanges = Blueprint("exchanges", __name__)
@@ -34,7 +35,7 @@ def get_exchange(exchange_id):
         exchange = Exchange.query.get(exchange_id)
 
         if not exchange:
-            return jsonify({"error": "Exchange not found"}), 404
+            return not_found("Exchange")
 
         return success(exchange.to_dict())
 
@@ -87,14 +88,14 @@ def create_exchange():
 
     current = get_current_user()
     if not current or current.id != data.get("offerer_id"):
-        return jsonify({"error": "Forbidden"}), 403
+        return forbidden()
 
     errors = validate(data, {
         "offerer_id": ["required"],
         "skill_id":   ["required"],
     })
     if errors:
-        return jsonify({"error": errors[0]}), 400
+        return bad_request(errors[0])
 
     try:
 
@@ -114,7 +115,7 @@ def create_exchange():
 
     except IntegrityError:
         db.session.rollback()
-        return jsonify({"error": "Invalid or duplicate data"}), 400
+        return bad_request("Invalid or duplicate data")
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -132,16 +133,15 @@ def complete_exchange(exchange_id):
         exchange = Exchange.query.get(exchange_id)
 
         if not exchange:
-            return jsonify({"error": "Exchange not found"}), 404
+            return not_found("Exchange")
 
         current = get_current_user()
         if not current or current.id not in (
                 exchange.offerer_id, exchange.demander_id):
-            return jsonify({"error": "Forbidden"}), 403
+            return forbidden()
 
         if exchange.is_completed:
-            return jsonify({
-                "error": "Exchange is already completed"}), 400
+            return bad_request("Exchange is already completed")
 
         exchange.is_completed = True
         exchange.completed_at = db.func.now()
@@ -184,31 +184,26 @@ def assign_demander(exchange_id):
 
     current = get_current_user()
     if not current or current.id != data.get("user_id"):
-        return jsonify({"error": "Forbidden"}), 403
+        return forbidden()
 
     try:
         demander_id = data.get("user_id")
         if not demander_id:
-            return jsonify({
-                "error": "Must provide user_id"}), 400
+            return bad_request("Must provide user_id")
 
         exchange = Exchange.query.get(exchange_id)
         if not exchange:
-            return jsonify({"error": "Exchange not found"}), 404
+            return not_found("Exchange")
 
         if exchange.demander_id is not None:
-            return jsonify({
-                "error": "Exchange already has a demander assigned"
-            }), 400
+            return bad_request("Exchange already has a demander assigned")
 
         if exchange.offerer_id == demander_id:
-            return jsonify({
-                "error": "The offerer cannot be their own demander"
-            }), 400
+            return bad_request("The offerer cannot be their own demander")
 
         demander = User.query.get(demander_id)
         if not demander:
-            return jsonify({"error": "Demander user not found"}), 404
+            return not_found("Demander user")
 
         exchange.demander_id = demander.id
         db.session.commit()
@@ -232,16 +227,14 @@ def delete_exchange(exchange_id):
         exchange = Exchange.query.get(exchange_id)
 
         if not exchange:
-            return jsonify({"error": "Exchange not found"}), 404
+            return not_found("Exchange")
 
         current = get_current_user()
         if not current or current.id != exchange.offerer_id:
-            return jsonify({"error": "Forbidden"}), 403
+            return forbidden()
 
         if exchange.is_completed:
-            return jsonify({
-                "error": "Cannot delete a completed exchange"
-            }), 400
+            return bad_request("Cannot delete a completed exchange")
 
         db.session.delete(exchange)
         db.session.commit()
