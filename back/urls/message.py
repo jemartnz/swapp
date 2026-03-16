@@ -5,7 +5,8 @@ from flask import Blueprint, request
 from flask_jwt_extended import jwt_required
 from back.models import db, Message
 from back.utils import (get_current_user, error_response, validate, success,
-                        forbidden, bad_request, not_found)
+                        forbidden, bad_request, not_found,
+                        paginate_query, paginated_success)
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 messages = Blueprint('messages', __name__)
@@ -17,13 +18,15 @@ def get_sent_messages(user_id):
         List messages sent by the user
     """
     try:
-        msgs = (
-            Message.query
-            .filter_by(sender_id=user_id)
-            .order_by(Message.sent_at.desc())
-            .all()
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+
+        pagination = paginate_query(
+            Message.query.filter_by(sender_id=user_id)
+            .order_by(Message.sent_at.desc()),
+            page, per_page
         )
-        return success([m.to_dict() for m in msgs])
+        return paginated_success([m.to_dict() for m in pagination.items], pagination)
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -36,13 +39,15 @@ def get_received_messages(user_id):
         List messages received by the user
     """
     try:
-        msgs = (
-            Message.query
-            .filter_by(receiver_id=user_id)
-            .order_by(Message.sent_at.desc())
-            .all()
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+
+        pagination = paginate_query(
+            Message.query.filter_by(receiver_id=user_id)
+            .order_by(Message.sent_at.desc()),
+            page, per_page
         )
-        return success([m.to_dict() for m in msgs])
+        return paginated_success([m.to_dict() for m in pagination.items], pagination)
 
     except SQLAlchemyError as e:
         db.session.rollback()

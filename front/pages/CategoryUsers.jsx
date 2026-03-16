@@ -24,7 +24,8 @@ function CategoryUsers() {
     ])
 
       .then(([usersData, categoryData]) => {
-        setUsers(usersData), setCategory(categoryData);
+        setUsers(usersData.data || []);
+        setCategory(categoryData.data || categoryData);
       })
       .catch((err) => {
         console.error("Error al cargar datos:", err);

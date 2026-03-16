@@ -28,6 +28,31 @@ def test_get_users_returns_list(client, make_user):
     assert "rating_average" in data[0]
 
 
+def test_get_users_pagination_meta(client, make_user):
+    for i in range(3):
+        make_user(email=f"u{i}@test.com")
+    res = client.get("/api/users?per_page=2")
+    assert res.status_code == 200
+    body = res.get_json()
+    assert "pagination" in body
+    assert body["pagination"]["total"] == 3
+    assert body["pagination"]["pages"] == 2
+    assert body["pagination"]["has_next"] is True
+    assert body["pagination"]["has_prev"] is False
+    assert len(body["data"]) == 2
+
+
+def test_get_users_page_2(client, make_user):
+    for i in range(3):
+        make_user(email=f"p{i}@test.com")
+    res = client.get("/api/users?page=2&per_page=2")
+    assert res.status_code == 200
+    body = res.get_json()
+    assert len(body["data"]) == 1
+    assert body["pagination"]["has_prev"] is True
+    assert body["pagination"]["has_next"] is False
+
+
 # ── GET /api/users/<id> ───────────────────────────────────────────────────────
 
 def test_get_user_found(client, make_user, make_skill):

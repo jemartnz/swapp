@@ -31,6 +31,21 @@ def test_get_received_messages(client, make_user, make_message):
     assert len(res.get_json()["data"]) == 1
 
 
+def test_get_sent_messages_pagination(client, make_user, make_message):
+    sender = make_user(email="sender@test.com")
+    receiver = make_user(email="receiver@test.com")
+    for _ in range(3):
+        make_message(sender_id=sender.id, receiver_id=receiver.id)
+
+    res = client.get(f"/api/messages/{sender.id}/sent?per_page=2")
+    assert res.status_code == 200
+    body = res.get_json()
+    assert "pagination" in body
+    assert body["pagination"]["total"] == 3
+    assert len(body["data"]) == 2
+    assert body["pagination"]["has_next"] is True
+
+
 def test_get_message_found(client, make_user, make_message):
     sender = make_user(email="sender@test.com")
     receiver = make_user(email="receiver@test.com")

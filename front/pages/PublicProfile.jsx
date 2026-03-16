@@ -36,7 +36,7 @@ import { env } from "../environ";
         });
         if (!res.ok) return null;
         const data = await res.json();
-        return data;
+        return data.data || data;
       } catch (err) {
         console.error("Error obteniendo usuario actual:", err);
         return null;
@@ -54,7 +54,7 @@ import { env } from "../environ";
           const res = await fetch(`${env.api}/api/users/${userId}`);
           if (!res.ok) throw new Error("Error al obtener usuario");
           const data = await res.json();
-          setUser(data);
+          setUser(data.data || data);
         } catch (err) {
           console.error(err);
           setError("No se pudo cargar el perfil del usuario.");
@@ -93,7 +93,7 @@ import { env } from "../environ";
           if (!res.ok) throw new Error(`HTTP ${res.status}: ${text}`);
 
           const data = JSON.parse(text);
-          setExchanges(Array.isArray(data) ? data : []);
+          setExchanges(Array.isArray(data.data) ? data.data : []);
         } catch (err) {
           console.error("Error al cargar intercambios:", err);
           setExchanges([]);

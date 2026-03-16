@@ -30,6 +30,21 @@ def test_get_exchanges_list(client, make_user, make_skill, make_exchange):
     assert len(res.get_json()["data"]) == 1
 
 
+def test_get_exchanges_pagination(client, make_user, make_skill, make_exchange):
+    offerer = make_user()
+    skill = make_skill()
+    for _ in range(3):
+        make_exchange(offerer_id=offerer.id, skill_id=skill.id)
+
+    res = client.get("/api/exchanges?per_page=2")
+    assert res.status_code == 200
+    body = res.get_json()
+    assert "pagination" in body
+    assert body["pagination"]["total"] == 3
+    assert len(body["data"]) == 2
+    assert body["pagination"]["has_next"] is True
+
+
 def test_get_exchange_found(client, make_user, make_skill, make_exchange):
     offerer = make_user()
     skill = make_skill()

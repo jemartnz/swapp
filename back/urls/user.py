@@ -12,7 +12,8 @@ from google.oauth2 import id_token as google_id_token
 from google.auth.transport import requests as google_requests
 from back.models import db, User, Skill, Category, Rating
 from back.utils import (get_current_user, error_response, validate, success,
-                        forbidden, bad_request, not_found)
+                        forbidden, bad_request, not_found,
+                        paginate_query, paginated_success)
 
 users = Blueprint('users', __name__)
 
@@ -23,21 +24,29 @@ def get_users():
         Get all users
     """
     try:
-        all_users = User.query.all()
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
 
+        pagination = paginate_query(
+            User.query.order_by(User.id), page, per_page
+        )
+
+        user_ids = [u.id for u in pagination.items]
         avg_rows = (
             db.session.query(
                 Rating.rated_id,
                 func.avg(Rating.score).label("avg")
             )
+            .filter(Rating.rated_id.in_(user_ids))
             .group_by(Rating.rated_id)
             .all()
         )
         avg_map = {row.rated_id: row.avg for row in avg_rows}
 
-        return success([
-            u.to_dict(rating_avg=avg_map.get(u.id, 0)) for u in all_users
-        ])
+        return paginated_success(
+            [u.to_dict(rating_avg=avg_map.get(u.id, 0)) for u in pagination.items],
+            pagination
+        )
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -70,20 +79,23 @@ def get_users_by_category(category_id):
         Returns all users that have skills in a given category
     """
     category = db.get_or_404(Category, category_id)
-
     skill_ids = [s.id for s in category.skills]
 
-    if not skill_ids:
-        return success([])
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
 
-    category_users = (
-        User.query
-        .join(User.skills)
-        .filter(Skill.id.in_(skill_ids))
-        .all()
+    if not skill_ids:
+        return jsonify({"data": [], "pagination": {
+            "page": 1, "per_page": per_page, "total": 0,
+            "pages": 0, "has_next": False, "has_prev": False,
+        }}), 200
+
+    pagination = paginate_query(
+        User.query.join(User.skills).filter(Skill.id.in_(skill_ids)).order_by(User.id),
+        page, per_page
     )
 
-    user_ids = [u.id for u in category_users]
+    user_ids = [u.id for u in pagination.items]
     avg_rows = (
         db.session.query(
             Rating.rated_id,
@@ -95,9 +107,10 @@ def get_users_by_category(category_id):
     )
     avg_map = {row.rated_id: row.avg for row in avg_rows}
 
-    return success([
-        u.to_dict(rating_avg=avg_map.get(u.id, 0)) for u in category_users
-    ])
+    return paginated_success(
+        [u.to_dict(rating_avg=avg_map.get(u.id, 0)) for u in pagination.items],
+        pagination
+    )
 
 
 @users.route('/api/users/<int:user_id>', methods=['DELETE'])

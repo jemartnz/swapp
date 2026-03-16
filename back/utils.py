@@ -92,6 +92,31 @@ def success(data=None, message=None, status=200):
     return jsonify(body), status
 
 
+def paginate_query(query, page, per_page, max_per_page=100):
+    """Paginate a SQLAlchemy query. Clamps page ≥ 1 and per_page to [1, max_per_page]."""
+    try:
+        page = max(1, int(page))
+        per_page = min(max(1, int(per_page)), max_per_page)
+    except (TypeError, ValueError):
+        page, per_page = 1, 20
+    return query.paginate(page=page, per_page=per_page, error_out=False)
+
+
+def paginated_success(items_dicts, pagination):
+    """Return a paginated success response with metadata."""
+    return jsonify({
+        "data": items_dicts,
+        "pagination": {
+            "page": pagination.page,
+            "per_page": pagination.per_page,
+            "total": pagination.total,
+            "pages": pagination.pages,
+            "has_next": pagination.has_next,
+            "has_prev": pagination.has_prev,
+        }
+    }), 200
+
+
 def not_found(resource="Resource"):
     """Return a standardised 404 response."""
     return jsonify({"error": f"{resource} not found"}), 404

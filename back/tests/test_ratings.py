@@ -16,6 +16,30 @@ def test_get_ratings_empty(client):
     assert res.get_json()["data"] == []
 
 
+def test_get_ratings_pagination(client, make_user, make_skill, make_exchange,
+                                make_rating):
+    offerer = make_user(email="offerer@test.com")
+    demander = make_user(email="demander@test.com")
+    skill = make_skill()
+    ex1 = make_exchange(offerer_id=offerer.id, skill_id=skill.id,
+                        demander_id=demander.id)
+    ex2 = make_exchange(offerer_id=demander.id, skill_id=skill.id,
+                        demander_id=offerer.id)
+    ex3 = make_exchange(offerer_id=offerer.id, skill_id=skill.id,
+                        demander_id=demander.id)
+    make_rating(exchange_id=ex1.id, rater_id=offerer.id, rated_id=demander.id)
+    make_rating(exchange_id=ex2.id, rater_id=demander.id, rated_id=offerer.id)
+    make_rating(exchange_id=ex3.id, rater_id=offerer.id, rated_id=demander.id)
+
+    res = client.get("/api/ratings?per_page=2")
+    assert res.status_code == 200
+    body = res.get_json()
+    assert "pagination" in body
+    assert body["pagination"]["total"] == 3
+    assert len(body["data"]) == 2
+    assert body["pagination"]["has_next"] is True
+
+
 def test_get_ratings_list(client, make_user, make_skill, make_exchange,
                           make_rating):
     offerer = make_user(email="offerer@test.com")

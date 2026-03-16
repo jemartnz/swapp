@@ -33,9 +33,9 @@ function Home() {
           return res.json();
         })
         .then((data) => {
-          if (data) {
-            setUser(data);
-            dispatch({ type: "SET_USER", payload: data });
+          if (data?.data) {
+            setUser(data.data);
+            dispatch({ type: "SET_USER", payload: data.data });
           }
         })
         .catch((err) => console.error("Error al cargar usuario:", err));
@@ -45,8 +45,8 @@ function Home() {
     fetch(`${env.api}/api/users`)
       .then((res) => res.json())
       .then((data) => {
-        if (data) {
-          dispatch({ type: "SET_USERS", payload: data });
+        if (data?.data) {
+          dispatch({ type: "SET_USERS", payload: data.data });
         }
       })
       .catch((err) => console.error("Error al cargar usuarios:", err));
@@ -64,7 +64,7 @@ function Home() {
   useEffect(() => {
     fetch(`${env.api}/api/users`)
       .then((res) => res.json())
-      .then((data) => setUsers(data.slice(0, 8)))
+      .then((data) => setUsers((data.data || []).slice(0, 8)))
       .catch((err) => console.error("Error al cargar usuarios:", err));
   }, []);
 

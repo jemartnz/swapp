@@ -5,7 +5,8 @@ from flask import Blueprint, request
 from flask_jwt_extended import jwt_required
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from back.utils import (get_current_user, error_response, validate, success,
-                        forbidden, bad_request, not_found)
+                        forbidden, bad_request, not_found,
+                        paginate_query, paginated_success)
 from back.models import db, Exchange, User, Skill
 
 exchanges = Blueprint("exchanges", __name__)
@@ -17,9 +18,13 @@ def get_exchanges():
         List all exchanges
     """
     try:
-        all_exchanges = Exchange.query.all()
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
 
-        return success([e.to_dict() for e in all_exchanges])
+        pagination = paginate_query(
+            Exchange.query.order_by(Exchange.id.desc()), page, per_page
+        )
+        return paginated_success([e.to_dict() for e in pagination.items], pagination)
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -51,10 +56,14 @@ def get_offered_exchanges(user_id):
         Get all exchanges created by the user (as offerer)
     """
     try:
-        user_exchanges = Exchange.query.filter_by(
-            offerer_id=user_id).all()
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
 
-        return success([e.to_dict() for e in user_exchanges])
+        pagination = paginate_query(
+            Exchange.query.filter_by(offerer_id=user_id).order_by(Exchange.id.desc()),
+            page, per_page
+        )
+        return paginated_success([e.to_dict() for e in pagination.items], pagination)
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -68,10 +77,14 @@ def get_demanded_exchanges(user_id):
         Get all exchanges where the user has been a demander
     """
     try:
-        user_exchanges = Exchange.query.filter_by(
-            demander_id=user_id).all()
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
 
-        return success([e.to_dict() for e in user_exchanges])
+        pagination = paginate_query(
+            Exchange.query.filter_by(demander_id=user_id).order_by(Exchange.id.desc()),
+            page, per_page
+        )
+        return paginated_success([e.to_dict() for e in pagination.items], pagination)
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -161,12 +174,17 @@ def get_exchanges_by_user(user_id):
         Get all exchanges in which a user participates
     """
     try:
-        user_exchanges = Exchange.query.filter(
-            (Exchange.offerer_id == user_id) |
-            (Exchange.demander_id == user_id)
-        ).all()
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
 
-        return success([e.to_dict() for e in user_exchanges])
+        pagination = paginate_query(
+            Exchange.query.filter(
+                (Exchange.offerer_id == user_id) |
+                (Exchange.demander_id == user_id)
+            ).order_by(Exchange.id.desc()),
+            page, per_page
+        )
+        return paginated_success([e.to_dict() for e in pagination.items], pagination)
 
     except SQLAlchemyError as e:
         db.session.rollback()
