@@ -99,9 +99,11 @@ Roadmap of improvements based on code analysis. Organized by priority.
   - Added 5 pagination tests across test_users, test_messages, test_exchanges, test_ratings
   - Frontend updated to read `.data` from all list responses (fixes pre-existing data-unwrapping bugs)
 
-- [ ] **Add frontend error boundary** [#15](https://github.com/jemartnz/swapp/issues/15)
-  - Catch React rendering errors gracefully
-  - Show user-friendly error page instead of white screen
+- [x] **Add frontend error boundary** [#15](https://github.com/jemartnz/swapp/issues/15)
+  - Created `front/assets/components/ErrorBoundary.jsx` — class component with `getDerivedStateFromError` + `componentDidCatch`
+  - Fallback UI in Spanish: "Algo salió mal" with "Reintentar" and "Volver al inicio" buttons
+  - Per-route boundaries in `App.jsx` (scoped: only the erroring page falls back)
+  - Global boundary in `main.jsx` (catches errors in providers/routing infrastructure)
 
 - [ ] **Improve Vite proxy setup** [#16](https://github.com/jemartnz/swapp/issues/16)
   - Configure Vite `server.proxy` to forward `/api` requests to the backend

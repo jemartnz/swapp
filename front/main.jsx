@@ -5,12 +5,15 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import { env } from "./environ";
 import "./index.css";
 import App from "./App.jsx";
+import ErrorBoundary from "./assets/components/ErrorBoundary";
 
 createRoot(document.querySelector("#root")).render(
   <StrictMode>
     <GoogleOAuthProvider clientId={env.googleClientId}>
       <BrowserRouter>
-        <App />
+        <ErrorBoundary>
+          <App />
+        </ErrorBoundary>
       </BrowserRouter>
     </GoogleOAuthProvider>
   </StrictMode>
