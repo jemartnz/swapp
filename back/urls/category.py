@@ -31,7 +31,7 @@ def get_category(category_id):
     """
         Get a single category
     """
-    category = Category.query.get_or_404(category_id)
+    category = db.get_or_404(Category, category_id)
     return success(category.to_dict())
 
 
@@ -65,7 +65,7 @@ def update_category(category_id):
     """
         Update a category
     """
-    category = Category.query.get_or_404(category_id)
+    category = db.get_or_404(Category, category_id)
     data = request.get_json()
 
     category.name = data.get('name', category.name)
@@ -81,7 +81,7 @@ def delete_category(category_id):
     """
         Delete a category
     """
-    category = Category.query.get_or_404(category_id)
+    category = db.get_or_404(Category, category_id)
     db.session.delete(category)
     db.session.commit()
     return success(message="Category deleted")

@@ -33,7 +33,7 @@ def get_skill(skill_id):
     """
         Get a single skill
     """
-    skill = Skill.query.get_or_404(skill_id)
+    skill = db.get_or_404(Skill, skill_id)
     return success(skill.to_dict())
 
 
@@ -54,7 +54,7 @@ def create_skill():
 
     new_skill = Skill(
         name=data["name"],
-        description=data["description"],
+        description=data.get("description"),
         category_id=data["category_id"]
     )
 
@@ -73,7 +73,7 @@ def delete_skill(skill_id):
     """
         Delete a skill
     """
-    skill = Skill.query.get_or_404(skill_id)
+    skill = db.get_or_404(Skill, skill_id)
     db.session.delete(skill)
     db.session.commit()
     return success(message="Skill deleted")
@@ -85,7 +85,7 @@ def update_skill(skill_id):
     """
         Update a skill
     """
-    skill = Skill.query.get_or_404(skill_id)
+    skill = db.get_or_404(Skill, skill_id)
     data = request.get_json()
 
     skill.description = data.get('description', skill.description)

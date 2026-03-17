@@ -21,7 +21,7 @@ def upload_profile_picture(user_id):
         return forbidden()
 
     try:
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
         if not user:
             return not_found("User")
 

@@ -5,7 +5,8 @@ from flask import Blueprint, request
 from flask_jwt_extended import jwt_required
 from back.models import db, Message
 from back.utils import (get_current_user, error_response, validate, success,
-                        forbidden, bad_request, not_found)
+                        forbidden, bad_request, not_found,
+                        paginate_query, paginated_success)
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 messages = Blueprint('messages', __name__)
@@ -17,13 +18,15 @@ def get_sent_messages(user_id):
         List messages sent by the user
     """
     try:
-        msgs = (
-            Message.query
-            .filter_by(sender_id=user_id)
-            .order_by(Message.sent_at.desc())
-            .all()
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+
+        pagination = paginate_query(
+            Message.query.filter_by(sender_id=user_id)
+            .order_by(Message.sent_at.desc()),
+            page, per_page
         )
-        return success([m.to_dict() for m in msgs])
+        return paginated_success([m.to_dict() for m in pagination.items], pagination)
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -36,13 +39,15 @@ def get_received_messages(user_id):
         List messages received by the user
     """
     try:
-        msgs = (
-            Message.query
-            .filter_by(receiver_id=user_id)
-            .order_by(Message.sent_at.desc())
-            .all()
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+
+        pagination = paginate_query(
+            Message.query.filter_by(receiver_id=user_id)
+            .order_by(Message.sent_at.desc()),
+            page, per_page
         )
-        return success([m.to_dict() for m in msgs])
+        return paginated_success([m.to_dict() for m in pagination.items], pagination)
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -55,7 +60,7 @@ def get_message(message_id):
         Get a single message
     """
     try:
-        msg = Message.query.get_or_404(message_id)
+        msg = db.get_or_404(Message, message_id)
         return success(msg.to_dict())
 
     except SQLAlchemyError as e:
@@ -110,7 +115,7 @@ def update_message(message_id):
     data = request.get_json() or {}
 
     try:
-        msg = Message.query.get_or_404(message_id)
+        msg = db.get_or_404(Message, message_id)
 
         current = get_current_user()
         if not current or current.id != msg.sender_id:
@@ -145,7 +150,7 @@ def delete_message(message_id):
         Delete a message
     """
     try:
-        msg = Message.query.get(message_id)
+        msg = db.session.get(Message, message_id)
 
         if not msg:
             return not_found("Message")

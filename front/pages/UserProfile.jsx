@@ -149,8 +149,8 @@ const handleSave = async () => {
     const data = await resp.json();
 
     // Update state
-    setUser(data?.updated ?? user);
-    dispatch({ type: "SET_USER", payload: data?.updated ?? user });
+    setUser(data?.data ?? user);
+    dispatch({ type: "SET_USER", payload: data?.data ?? user });
     setEditing(false);
     setMsg({ tipo: "success", contenido: data?.message || "Cambios guardados correctamente." });
   } catch (e) {
@@ -203,7 +203,7 @@ const handleRemoveSkill = async (skillId) => {
     if (!ref.ok) throw new Error("Error al refrescar usuario");
     const data = await ref.json();
 
-    setUser(data);
+    setUser(data.data || data);
     setMsg({
       tipo: "success",
       contenido: "Habilidad eliminada correctamente.",
@@ -237,7 +237,8 @@ const fetchUserById = async (id) => {
       headers: { Accept: "application/json" },
     });
     if (!r.ok) return null;
-    return await r.json();
+    const data = await r.json();
+    return data.data || data;
   } catch {
     return null;
   }
@@ -255,7 +256,7 @@ const fetchExchanges = async () => {
     if (!res.ok) throw new Error("Error al obtener intercambios");
 
     const raw = await res.json();
-    const list = Array.isArray(raw) ? raw : [];
+    const list = Array.isArray(raw?.data) ? raw.data : [];
 
     // collect unique user ids to minimize calls
     const ids = new Set();
@@ -444,7 +445,7 @@ const openRatingModal = (exchange) => {
                   // refresh to get updated descriptions from backend
                   fetch(`${env.api}/api/users/${user.id}`)
                     .then((r) => r.json())
-                    .then((d) => setUser(d))
+                    .then((d) => setUser(d.data || d))
                     .catch((e) => console.error("Error refrescando usuario:", e));
                 }}
               >
@@ -715,7 +716,7 @@ const openRatingModal = (exchange) => {
                         // refresh user to see new skill
                         fetch(`${env.api}/api/users/${user.id}`)
                           .then((r) => r.json())
-                          .then((d) => setUser(d))
+                          .then((d) => setUser(d.data || d))
                           .catch((e) => console.error("Error al actualizar habilidades:", e));
                       }}
                     />
@@ -837,13 +838,14 @@ const openRatingModal = (exchange) => {
               });
 
               const data = await res.json();
+              const picUrl = data?.data?.profile_picture || data?.profile_picture;
               if (res.ok) {
                 setUser((prev) => ({
                   ...prev,
-                  profile_picture: data.profile_picture,
+                  profile_picture: picUrl,
                 }));
                 const img = document.querySelector(".perfil-avatar");
-                if (img) img.src = data.profile_picture;
+                if (img) img.src = picUrl;
                 setMsg({
                   tipo: "success",
                   contenido: "Foto actualizada correctamente",

@@ -49,8 +49,8 @@ function Navbar() {
         const response = await fetch(`${env.api}/api/categories`);
         if (!response.ok) throw new Error("Error al obtener categorías");
         const data = await response.json();
-        setCategories(data);
-        dispatch({ type: "SET_CATEGORIES", payload: data });
+        setCategories(data.data || []);
+        dispatch({ type: "SET_CATEGORIES", payload: data.data });
       } catch (error) {
         console.error("Error cargando categorías:", error);
       }

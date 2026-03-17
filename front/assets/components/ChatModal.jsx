@@ -29,7 +29,7 @@ export default function ChatModal({ show, close, receiverId }) {
       headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
     })
       .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then(setMe)
+      .then((d) => setMe(d.data || d))
       .catch(console.error);
   }, [show]);
 
@@ -48,10 +48,11 @@ export default function ChatModal({ show, close, receiverId }) {
         const snt = await r2.json();
 
         // --- fetch users ---
-        const usersResp = await fetch(`${env.api}/api/users`);
-        const users = await usersResp.json();
+        const usersResp = await fetch(`${env.api}/api/users?per_page=100`);
+        const usersJson = await usersResp.json();
+        const userList = usersJson.data || [];
         const userMap = new Map(
-          users.map((u) => [u.id, `${u.first_name} ${u.last_name}`])
+          userList.map((u) => [u.id, `${u.first_name} ${u.last_name}`])
         );
         setNames(userMap);
 
@@ -64,8 +65,10 @@ export default function ChatModal({ show, close, receiverId }) {
             userMap.get(m.receiver_id) || `Usuario ${m.receiver_id}`,
         });
 
-        setReceived(Array.isArray(rec) ? rec.map(process) : []);
-        setSent(Array.isArray(snt) ? snt.map(process) : []);
+        const recList = rec.data || [];
+        const sntList = snt.data || [];
+        setReceived(recList.map(process));
+        setSent(sntList.map(process));
       } catch (e) {
         console.error("Error cargando mensajes:", e);
       }
@@ -127,7 +130,8 @@ export default function ChatModal({ show, close, receiverId }) {
         body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error("No se pudo enviar");
-      const newMsg = await res.json();
+      const newMsgJson = await res.json();
+      const newMsg = newMsgJson.data || newMsgJson;
 
       // reflect in UI
       setSent((prev) => [

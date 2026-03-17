@@ -5,7 +5,8 @@ from flask import Blueprint, request
 from flask_jwt_extended import jwt_required
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from back.utils import (get_current_user, error_response, validate, success,
-                        forbidden, bad_request, not_found)
+                        forbidden, bad_request, not_found,
+                        paginate_query, paginated_success)
 from back.models import db, User, Rating, Exchange
 
 ratings = Blueprint('ratings', __name__)
@@ -17,9 +18,13 @@ def get_ratings():
         List all ratings
     """
     try:
-        all_ratings = Rating.query.all()
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
 
-        return success([r.to_dict() for r in all_ratings])
+        pagination = paginate_query(
+            Rating.query.order_by(Rating.id.desc()), page, per_page
+        )
+        return paginated_success([r.to_dict() for r in pagination.items], pagination)
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -32,7 +37,7 @@ def get_rating(rating_id):
         Get a single rating
     """
     try:
-        rating = Rating.query.get(rating_id)
+        rating = db.session.get(Rating, rating_id)
 
         if not rating:
             return not_found("Rating")
@@ -65,8 +70,8 @@ def create_rating():
 
     try:
 
-        exchange = Exchange.query.get_or_404(data["exchange_id"])
-        rater = User.query.get_or_404(data["rater_id"])
+        exchange = db.get_or_404(Exchange, data["exchange_id"])
+        rater = db.get_or_404(User, data["rater_id"])
 
         if rater.id == exchange.offerer_id:
             rated_id = exchange.demander_id
@@ -76,7 +81,7 @@ def create_rating():
         if not rated_id:
             return bad_request("The exchange does not have a demander assigned yet")
 
-        rated = User.query.get_or_404(rated_id)
+        rated = db.get_or_404(User, rated_id)
 
         rating = Rating(
             exchange_id=exchange.id,
@@ -110,7 +115,7 @@ def update_rating(rating_id):
     data = request.get_json() or {}
 
     try:
-        rating = Rating.query.get(rating_id)
+        rating = db.session.get(Rating, rating_id)
 
         if not rating:
             return not_found("Rating")
@@ -149,7 +154,7 @@ def delete_rating(rating_id):
         Delete a rating
     """
     try:
-        rating = Rating.query.get(rating_id)
+        rating = db.session.get(Rating, rating_id)
 
         if not rating:
             return not_found("Rating")
