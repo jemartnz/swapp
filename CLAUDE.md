@@ -95,7 +95,7 @@ All API endpoints prefixed with `/api/`. Auth uses JWT tokens via Flask-JWT-Exte
 - **State management**: Context + useReducer in `front/store.js` (actions: SET_USER, SET_USERS, SET_TOKEN, SET_CATEGORIES)
 - **API calls**: `front/services/api.js`
 - **Pages**: Home, Login, Register, UserProfile, PublicProfile, CategoryUsers
-- **Components**: Navbar, Footer, Carousel, UserCard, ChatModal, ExchangeModal, RatingModal, AddSkillModal, CropperModal, MessagingButton
+- **Components**: Navbar, Footer, Carousel, UserCard, ChatModal, ExchangeModal, RatingModal, AddSkillModal, CropperModal, MessagingButton, ErrorBoundary
 - **Styles**: `front/assets/styles/` — one CSS file per component
 
 ### Key Patterns

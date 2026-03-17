@@ -8,20 +8,21 @@ import Login from "./pages/Login";
 import UserProfile from "./pages/UserProfile";
 import PublicProfile from "./pages/PublicProfile";
 import CategoryUsers from "./pages/CategoryUsers.jsx";
+import ErrorBoundary from "./assets/components/ErrorBoundary";
 
 export default function App() {
   return (
     <StoreProvider>
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/registro" element={<Register />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/perfil" element={<UserProfile />} />
-        <Route path="/usuario/:userId" element={<PublicProfile />} />
+        <Route path="/" element={<ErrorBoundary><Home /></ErrorBoundary>} />
+        <Route path="/registro" element={<ErrorBoundary><Register /></ErrorBoundary>} />
+        <Route path="/login" element={<ErrorBoundary><Login /></ErrorBoundary>} />
+        <Route path="/perfil" element={<ErrorBoundary><UserProfile /></ErrorBoundary>} />
+        <Route path="/usuario/:userId" element={<ErrorBoundary><PublicProfile /></ErrorBoundary>} />
         <Route
           path="/usuarios/categoria/:categoryId"
-          element={<CategoryUsers />}
-        ></Route>
+          element={<ErrorBoundary><CategoryUsers /></ErrorBoundary>}
+        />
       </Routes>
     </StoreProvider>
   );
